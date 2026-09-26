@@ -53,7 +53,7 @@
 
   function diagram(page) {
     const t = UI[lang];
-    if ([11, 17, 18, 19].includes(page)) {
+    if ([11, 18].includes(page)) {
       const names = lang === "ko"
         ? [["비그리스도인", "그리스도가 밖에 있음"], ["그리스도 중심", "그리스도가 삶을 다스림"], ["자아 중심", "자아가 삶을 다스림"]]
         : [["Non-Christian", "Christ is outside"], ["Christ-directed", "Christ directs life"], ["Self-directed", "Self directs life"]];
@@ -93,8 +93,10 @@
         </svg><p class="train-copy">${labels.desc}</p></section>`;
     }
     if ([30,31,32].includes(page)) {
-      const items = lang === "ko" ? ["하나님", "기도", "성경 공부", "순종", "사람"] : ["God", "Prayer", "Bible study", "Obedience", "Person"];
-      return `<section class="visual" aria-label="${t.visual}"><h3>${lang==='ko'?'영적 성장의 기본 원리':'Foundations of spiritual growth'}</h3><div class="flow">${items.slice(1).map((x,i)=>`<div><strong>${i+1}</strong>${x}</div>`).join("")}</div></section>`;
+      const items = lang === "ko" ? ["기도", "성경 공부", "순종"] : ["Prayer", "Bible study", "Obedience"];
+      const count = page - 29;
+      const visibleItems = items.slice(0, count);
+      return `<section class="visual" aria-label="${t.visual}"><h3>${lang==='ko'?'영적 성장의 기본 원리':'Foundations of spiritual growth'}</h3><div class="flow" style="--steps:${visibleItems.length}">${visibleItems.map((x,i)=>`<div><strong>${i+1}</strong>${x}</div>`).join("")}</div></section>`;
     }
     if (page === 38) {
       const items = lang === "ko" ? ["읽기", "관찰", "해석", "적용"] : ["Reading", "Observation", "Interpretation", "Application"];

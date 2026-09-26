@@ -87,7 +87,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
 .train-copy { margin: 14px 0 0; max-width: 68ch; color: var(--muted); font-size: var(--text-sm); line-height: 1.65; }
 .train-label { font: 800 24px Pretendard, "Noto Sans KR", system-ui, sans-serif; fill: var(--navy); text-anchor: middle; }
 .train-sub { font: 650 14px Pretendard, "Noto Sans KR", system-ui, sans-serif; fill: #66717d; text-anchor: middle; }
-.flow { display: grid; grid-template-columns: repeat(4, 1fr); min-width: 600px; border: 1px solid var(--line); }
+.flow { display: grid; grid-template-columns: repeat(var(--steps, 4), minmax(150px, 1fr)); min-width: min(600px, calc(var(--steps, 4) * 180px)); border: 1px solid var(--line); }
 .flow div { padding: 14px; border-right: 1px solid var(--line); }
 .flow div:last-child { border-right: 0; }
 .flow strong { display: block; color: var(--navy); margin-bottom: 6px; }
