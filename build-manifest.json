@@ -1,0 +1,40 @@
+{
+  "title": "새로운 삶의 시작 · The Beginning of a New Life",
+  "organization": {
+    "ko": "맨하탄선교교회",
+    "en": "Manhattan Mission Church"
+  },
+  "format": "static interactive web workbook",
+  "languages": ["ko", "en"],
+  "lessons": 6,
+  "sourcePagesPerLanguage": 48,
+  "lessonPageRanges": {
+    "1": "4-7",
+    "2": "10-13",
+    "3": "16-27",
+    "4": "30-33",
+    "5": "36-39",
+    "6": "42-47"
+  },
+  "features": [
+    "language switch preserving current week",
+    "question-specific short, long, and yes/no controls",
+    "three response-space sizes based on answer intent",
+    "separate controls for nested subquestions",
+    "automatic local answer saving",
+    "lesson progress",
+    "JSON answer export",
+    "responsive layout",
+    "print stylesheet",
+    "six-level responsive typography",
+    "web-native study diagrams including a semantic faith train"
+  ],
+  "branding": {
+    "logo": "assets/mmc-gray-logo.png"
+  },
+  "contentNotes": [
+    "English Scripture quotations retain the NIV label supplied in the English source.",
+    "The source PDFs do not contain an official answer key; the web edition does not invent one.",
+    "Downloads are personal exports and are not transmitted to a teacher."
+  ]
+}
