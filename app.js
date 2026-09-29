@@ -51,6 +51,20 @@
     return /^[“‘\"]/.test(text) || /(?:NIV|개역|John \d|Romans \d|Psalm \d|요한복음 \d|로마서 \d|시편 \d)/.test(text);
   }
 
+  function isPdfDiagramArtifact(block) {
+    const text = String(block?.text || "").replace(/\s+/g, " ").trim();
+    return [
+      /^나 나 나$/,
+      /^① ② ③ 비그리스도인/,
+      /^관계 관계 관계$/,
+      /^교제 교제 교제$/,
+      /^S S S$/,
+      /^① ② ③ Non-Christian/,
+      /^Relationship Relationship Relationship$/,
+      /^Fellowship Fellowship Fellowship$/
+    ].some(pattern => pattern.test(text));
+  }
+
   function diagram(page) {
     const t = UI[lang];
     if ([11, 18].includes(page)) {
@@ -153,7 +167,7 @@
     document.querySelectorAll("[data-lang]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.lang === lang)));
 
     el("lesson-nav").innerHTML = DATA.lessons.map((item,i)=>`<button class="lesson-link" data-lesson="${i}" ${i===lessonIndex?'aria-current="page"':''}><span>${String(i+1).padStart(2,'0')}</span><span>${escapeHtml(item[lang])}</span></button>`).join("");
-    const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${DATA.pages[lang][page].map(block=>renderBlock(page,block)).join("")}${diagram(page)}</section>`).join("");
+    const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${DATA.pages[lang][page].filter(block=>!isPdfDiagramArtifact(block)).map(block=>renderBlock(page,block)).join("")}${diagram(page)}</section>`).join("");
     el("lesson-content").innerHTML = `<header class="lesson-hero"><span class="week-chip">${t.week} ${lessonIndex+1}</span><h2>${escapeHtml(lesson[lang])}</h2><p>${DATA.course[lang].subtitle}</p></header>${pages}<nav class="lesson-pagination"><button data-move="-1" ${lessonIndex===0?'disabled':''}>← ${t.previous}</button><button data-move="1" ${lessonIndex===5?'disabled':''}>${t.next} →</button></nav>`;
     wireAnswers();
     updateProgress();
