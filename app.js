@@ -65,9 +65,64 @@
     ].some(pattern => pattern.test(text));
   }
 
+  function principleDiagram(page) {
+    const labels = lang === "ko"
+      ? {
+          30: { number:"01", title:"기도", summary:"사람이 하나님께 마음을 열고 대화하며 교제합니다.", god:"하나님", person:"사람", prayer:"기도", fellowship:"대화와 교제" },
+          31: { number:"02", title:"성경 공부", summary:"하나님은 말씀하시고, 우리는 기도로 응답합니다.", god:"하나님", person:"사람", prayer:"기도", bible:"성경 공부", center:["매일의 힘을 얻기 위해", "날마다 성경 읽기"] },
+          32: { number:"03", title:"순종", summary:"말씀을 듣고 기도로 교제하며, 깨달은 뜻을 삶으로 행합니다.", god:"하나님", person:"사람", prayer:"기도", bible:"성경 공부", obedience:"순종", center:["말씀을 듣고", "삶으로 행하기"] }
+        }
+      : {
+          30: { number:"01", title:"Prayer", summary:"We open our hearts to God and fellowship with Him.", god:"God", person:"Person", prayer:"Prayer", fellowship:"Conversation and fellowship" },
+          31: { number:"02", title:"Bible study", summary:"God speaks through His Word, and we respond in prayer.", god:"God", person:"Person", prayer:"Prayer", bible:"Bible study", center:["Read the Bible daily", "for strength each day"] },
+          32: { number:"03", title:"Obedience", summary:"We hear God’s Word, fellowship in prayer, and put His will into practice.", god:"God", person:"Person", prayer:"Prayer", bible:"Bible study", obedience:"Obedience", center:["Hear God’s Word", "and live it out"] }
+        };
+    const x = labels[page];
+    const navyMarker = `principle-navy-${page}-${lang}`;
+    const goldMarker = `principle-gold-${page}-${lang}`;
+    const personIcon = `<g class="principle-person-icon"><circle cx="0" cy="-11" r="11"></circle><path d="M-25 25C-22 5 22 5 25 25"></path></g>`;
+    const godIcon = `<g class="principle-god-icon"><circle cx="0" cy="0" r="17"></circle><path d="M0-32V-25M0 25V32M-32 0H-25M25 0H32M-23-23L-18-18M18 18L23 23M23-23L18-18M-18 18L-23 23"></path></g>`;
+    if (page === 30) {
+      return `<section class="principle-visual" aria-labelledby="principle-title-${page}">
+        <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}">${x.title}</h3><p>${x.summary}</p></div></header>
+        <svg class="principle-diagram principle-diagram-prayer" viewBox="0 0 680 360" role="img" aria-labelledby="principle-svg-title-${page} principle-svg-desc-${page}">
+          <title id="principle-svg-title-${page}">${x.title}</title><desc id="principle-svg-desc-${page}">${x.summary}</desc>
+          <defs>
+            <linearGradient id="prayer-line-${lang}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#49799f"></stop><stop offset="1" stop-color="#17426b"></stop></linearGradient>
+            <marker id="${navyMarker}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#17426b"></path></marker>
+          </defs>
+          <circle class="principle-halo" cx="340" cy="78" r="60"></circle>
+          <g transform="translate(340 68)">${godIcon}</g><text class="principle-node" x="340" y="136">${x.god}</text>
+          <path class="principle-prayer-line" d="M340 277V157" marker-end="url(#${navyMarker})"></path>
+          <g class="principle-label-pill" transform="translate(385 196)"><rect x="0" y="0" width="190" height="70" rx="35"></rect><text x="95" y="29">${x.prayer}</text><text class="principle-label-sub" x="95" y="52">${x.fellowship}</text></g>
+          <circle class="principle-person-node" cx="340" cy="305" r="48"></circle><g transform="translate(340 299)">${personIcon}</g>
+          <text class="principle-person-label" x="340" y="357">${x.person}</text>
+        </svg>
+      </section>`;
+    }
+    return `<section class="principle-visual" aria-labelledby="principle-title-${page}">
+      <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}">${x.title}</h3><p>${x.summary}</p></div></header>
+      <svg class="principle-diagram" viewBox="0 0 680 440" role="img" aria-labelledby="principle-svg-title-${page} principle-svg-desc-${page}">
+        <title id="principle-svg-title-${page}">${x.title}</title><desc id="principle-svg-desc-${page}">${x.summary}</desc>
+        <defs>
+          <marker id="${navyMarker}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#17426b"></path></marker>
+          <marker id="${goldMarker}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c89a00"></path></marker>
+        </defs>
+        ${x.obedience ? `<g class="principle-obedience-pill" transform="translate(265 4)"><rect width="150" height="42" rx="21"></rect><text x="75" y="27">${x.obedience}</text></g>` : ""}
+        <circle class="principle-halo" cx="340" cy="95" r="58"></circle><g transform="translate(340 84)">${godIcon}</g><text class="principle-node" x="340" y="151">${x.god}</text>
+        <path class="principle-word-line" d="M277 139C139 173 136 296 270 347" marker-end="url(#${goldMarker})"></path>
+        <path class="principle-prayer-line" d="M410 347C544 296 541 173 403 139" marker-end="url(#${navyMarker})"></path>
+        <g class="principle-word-pill" transform="translate(36 212)"><rect width="168" height="54" rx="27"></rect><text x="84" y="34">${x.bible}</text></g>
+        <g class="principle-label-pill" transform="translate(476 212)"><rect width="168" height="54" rx="27"></rect><text x="84" y="34">${x.prayer}</text></g>
+        <g class="principle-center-card" transform="translate(225 186)"><rect width="230" height="108" rx="22"></rect><path d="M74 28c18-8 36-7 41 2 5-9 23-10 41-2v36c-18-7-35-6-41 3-6-9-23-10-41-3z"></path><path d="M115 31v36"></path><text x="115" y="87"><tspan x="115">${x.center[0]}</tspan><tspan x="115" dy="21">${x.center[1]}</tspan></text></g>
+        <circle class="principle-person-node" cx="340" cy="375" r="48"></circle><g transform="translate(340 369)">${personIcon}</g><text class="principle-person-label" x="340" y="435">${x.person}</text>
+      </svg>
+    </section>`;
+  }
+
   function diagram(page) {
     const t = UI[lang];
-    if ([11, 18].includes(page)) {
+    if (page === 11) {
       const names = lang === "ko"
         ? [["비그리스도인", "그리스도가 밖에 있음"], ["그리스도 중심", "그리스도가 삶을 다스림"], ["자아 중심", "자아가 삶을 다스림"]]
         : [["Non-Christian", "Christ is outside"], ["Christ-directed", "Christ directs life"], ["Self-directed", "Self directs life"]];
@@ -106,15 +161,27 @@
           <text class="train-label" x="748" y="174">${labels.feeling}</text><text class="train-sub" x="748" y="198">${labels.caboose}</text>
         </svg><p class="train-copy">${labels.desc}</p></section>`;
     }
-    if ([30,31,32].includes(page)) {
-      const items = lang === "ko" ? ["기도", "성경 공부", "순종"] : ["Prayer", "Bible study", "Obedience"];
-      const count = page - 29;
-      const visibleItems = items.slice(0, count);
-      return `<section class="visual" aria-label="${t.visual}"><h3>${lang==='ko'?'영적 성장의 기본 원리':'Foundations of spiritual growth'}</h3><div class="flow" style="--steps:${visibleItems.length}">${visibleItems.map((x,i)=>`<div><strong>${i+1}</strong>${x}</div>`).join("")}</div></section>`;
-    }
     if (page === 38) {
-      const items = lang === "ko" ? ["읽기", "관찰", "해석", "적용"] : ["Reading", "Observation", "Interpretation", "Application"];
-      return `<section class="visual" aria-label="${t.visual}"><h3>${lang==='ko'?'말씀 묵상의 네 단계':'Four steps of Bible study'}</h3><div class="flow">${items.map((x,i)=>`<div><strong>${i+1}</strong>${x}</div>`).join("")}</div></section>`;
+      const method = lang === "ko"
+        ? {
+            title:"말씀 묵상의 네 단계", intro:"본문을 읽는 데서 멈추지 않고, 관찰하고 해석한 뒤 오늘의 삶에 적용합니다.", example:"예시 · 베드로전서 5:7",
+            steps:[
+              {name:"읽기", verb:"본문과 만나기", guide:"말씀을 천천히 여러 번 읽고 깊이 묵상합니다.", sample:"베드로전서 5:7을 차분히 읽습니다."},
+              {name:"관찰", verb:"무엇을 말하는가?", guide:"본문이 실제로 말하는 내용과 눈에 띄는 표현을 기록합니다.", sample:"‘너희 염려를 다 주께 맡기라. 이는 그가 너희를 돌보심이라.’"},
+              {name:"해석", verb:"무엇을 뜻하는가?", guide:"하나님과 사람에 관해 무엇을 가르치는지 자신의 말로 정리합니다.", sample:"하나님은 우리를 세심하게 돌보시며 삶의 모든 문제를 맡기기 원하십니다."},
+              {name:"적용", verb:"나는 어떻게 살 것인가?", guide:"오늘 실천할 개인적이고 구체적이며 현실적인 행동을 적습니다.", sample:"재정, 관계, 두려움과 염려를 주님께 맡기고 기도하겠습니다."}
+            ]
+          }
+        : {
+            title:"Four steps of Bible study", intro:"Move from reading the passage to observing, interpreting, and putting it into practice today.", example:"Worked example · 1 Peter 5:7",
+            steps:[
+              {name:"Reading", verb:"Meet the passage", guide:"Read the passage slowly several times and meditate on it carefully.", sample:"Read and reflect on 1 Peter 5:7."},
+              {name:"Observation", verb:"What does it say?", guide:"Write what the passage actually says and note the words that stand out.", sample:"“Cast all your anxiety on him because he cares for you.”"},
+              {name:"Interpretation", verb:"What does it mean?", guide:"Restate in your own words what it teaches about God and people.", sample:"God watches over us and wants us to entrust every problem in our lives to Him."},
+              {name:"Application", verb:"How will I live it?", guide:"Write a personal, specific, and realistic action you can take today.", sample:"I will entrust my finances, relationships, fears, and worries to the Lord in prayer."}
+            ]
+          };
+      return `<section class="study-method" aria-labelledby="study-method-title"><header><span>01—04</span><div><h3 id="study-method-title">${method.title}</h3><p>${method.intro}</p></div></header><ol class="study-method-grid">${method.steps.map((step,i)=>`<li><div class="study-step-heading"><strong>${String(i+1).padStart(2,'0')}</strong><div><h4>${step.name}</h4><p>${step.verb}</p></div></div><p class="study-step-guide">${step.guide}</p><div class="study-step-example"><span>${method.example}</span><p>${step.sample}</p></div></li>`).join("")}</ol></section>`;
     }
     if (page === 46) {
       const who = lang === "ko" ? "친구" : "Person";
@@ -151,6 +218,56 @@
     return `<p class="content-text ${isScripture(block.text)?'scripture':''}">${escapeHtml(block.text)}</p>`;
   }
 
+  function stateDiagram(kind) {
+    const self = lang === "ko" ? "나" : "S";
+    const labels = lang === "ko"
+      ? {natural:"자연인", spiritual:"성령의 사람", worldly:"세상적인 그리스도인"}
+      : {natural:"Natural person", spiritual:"Spirit-led person", worldly:"Worldly Christian"};
+    const dots = kind === "spiritual"
+      ? [[90,34,5],[124,44,5],[145,72,5],[148,108,5],[126,137,5],[90,148,5],[54,137,5],[33,108,5],[36,72,5],[56,44,5]]
+      : [[60,45,8],[91,34,5],[124,50,10],[141,82,6],[130,124,9],[92,142,5],[54,126,12],[38,90,5],[73,78,4],[112,96,5]];
+    const cross = kind === "natural" ? {x:24,y:159} : {x:kind === "spiritual" ? 90 : 126,y:kind === "spiritual" ? 105 : 120};
+    const selfPos = kind === "spiritual" ? {x:130,y:129} : {x:90,y:100};
+    return `<figure class="state-figure"><svg class="state-diagram" viewBox="0 0 180 180" role="img" aria-label="${escapeHtml(labels[kind])}">
+      <circle class="state-ring" cx="90" cy="90" r="66"></circle>
+      ${dots.map(([cx,cy,r])=>`<circle class="state-dot" cx="${cx}" cy="${cy}" r="${r}"></circle>`).join("")}
+      <text class="state-self" x="${selfPos.x}" y="${selfPos.y}">${self}</text>
+      <text class="state-cross" x="${cross.x}" y="${cross.y}">†</text>
+    </svg><figcaption>${escapeHtml(labels[kind])}</figcaption></figure>`;
+  }
+
+  function stateProfile(kind, heading, details) {
+    return `<section class="person-profile person-profile-${kind}">${stateDiagram(kind)}<div class="person-profile-copy"><h4>${escapeHtml(heading.text)}</h4>${details.map(block=>`<p>${escapeHtml(block.text.replace(/^[-•]\s*/, ""))}</p>`).join("")}</div></section>`;
+  }
+
+  function renderPageBlocks(page) {
+    const blocks = DATA.pages[lang][page].filter(block=>!isPdfDiagramArtifact(block));
+    const byId = id => blocks.find(block => block.id === id);
+    if (page === 17) {
+      return [
+        renderBlock(page, byId("p17-b1")),
+        renderBlock(page, byId("p17-b2")),
+        `<div class="state-section-intro">${renderBlock(page, byId("p17-b3"))}</div>`,
+        stateProfile("natural", byId("p17-b4"), [byId("p17-b5"), byId("p17-b6")]),
+        `<div class="state-section-intro">${renderBlock(page, byId("p17-b7"))}</div>`,
+        stateProfile("spiritual", byId("p17-b8"), [byId("p17-b9"), byId("p17-b10")])
+      ].join("");
+    }
+    if (page === 18) {
+      return [
+        `<div class="state-section-intro">${renderBlock(page, byId("p18-b1"))}</div>`,
+        stateProfile("worldly", byId("p18-b2"), [byId("p18-b3"), byId("p18-b4")]),
+        renderBlock(page, byId("p18-b5")),
+        renderBlock(page, byId("p18-b6"))
+      ].join("");
+    }
+    if ([30, 31, 32].includes(page)) {
+      const anchorId = page === 30 ? (lang === "ko" ? "p30-b3" : "p30-b2") : `p${page}-b1`;
+      return blocks.map(block => `${renderBlock(page, block)}${block.id === anchorId ? principleDiagram(page) : ""}`).join("");
+    }
+    return blocks.map(block=>renderBlock(page,block)).join("");
+  }
+
   function render() {
     const t = UI[lang];
     const lesson = DATA.lessons[lessonIndex];
@@ -167,7 +284,7 @@
     document.querySelectorAll("[data-lang]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.lang === lang)));
 
     el("lesson-nav").innerHTML = DATA.lessons.map((item,i)=>`<button class="lesson-link" data-lesson="${i}" ${i===lessonIndex?'aria-current="page"':''}><span>${String(i+1).padStart(2,'0')}</span><span>${escapeHtml(item[lang])}</span></button>`).join("");
-    const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${DATA.pages[lang][page].filter(block=>!isPdfDiagramArtifact(block)).map(block=>renderBlock(page,block)).join("")}${diagram(page)}</section>`).join("");
+    const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${renderPageBlocks(page)}${diagram(page)}</section>`).join("");
     el("lesson-content").innerHTML = `<header class="lesson-hero"><span class="week-chip">${t.week} ${lessonIndex+1}</span><h2>${escapeHtml(lesson[lang])}</h2><p>${DATA.course[lang].subtitle}</p></header>${pages}<nav class="lesson-pagination"><button data-move="-1" ${lessonIndex===0?'disabled':''}>← ${t.previous}</button><button data-move="1" ${lessonIndex===5?'disabled':''}>${t.next} →</button></nav>`;
     wireAnswers();
     updateProgress();
