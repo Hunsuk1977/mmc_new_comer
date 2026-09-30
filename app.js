@@ -78,6 +78,33 @@
           32: { number:"03", title:"Obedience", summary:"We hear God’s Word, fellowship in prayer, and put His will into practice.", god:"God", person:"Person", prayer:"Prayer", bible:"Bible study", obedience:"Obedience", center:["Hear God’s Word", "and live it out"] }
         };
     const x = labels[page];
+    const media = {
+      ko: {
+        30: { file:"prayer-fellowship-2way", alt:"사람과 하나님이 기도로 대화하고 교제하는 양방향 관계" },
+        31: { file:"daily-bible-cycle", alt:"성경 공부와 기도로 하나님과 사람이 교제하며 날마다 힘을 얻는 순환" },
+        32: { file:"word-prayer-cycle", alt:"성경 공부와 기도로 말씀을 듣고 삶으로 순종하는 순환" }
+      },
+      en: {
+        30: { file:"prayer-fellowship-2way-en", alt:"A two-way relationship in which a person talks and fellowships with God through prayer" },
+        31: { file:"daily-bible-cycle-en", alt:"Bible study and prayer forming a daily cycle of strength and fellowship with God" },
+        32: { file:"word-prayer-cycle-en", alt:"The cycle of Bible study, prayer, and living out God’s Word in obedience" }
+      }
+    }[lang][page];
+    if (media) {
+      const base = `assets/lesson-04/${media.file}`;
+      return `<section class="principle-visual" aria-labelledby="principle-title-${page}">
+        <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}">${x.title}</h3><p>${x.summary}</p></div></header>
+        <figure class="principle-motion" data-motion-diagram>
+          <div class="principle-motion-stage">
+            <video class="principle-motion-video" muted playsinline preload="metadata" poster="${base}.png" aria-label="${media.alt}">
+              <source src="${base}.mp4" type="video/mp4">
+            </video>
+            <img class="principle-motion-still" src="${base}.png" alt="${media.alt}" hidden>
+          </div>
+          <button class="motion-replay" type="button" hidden>${lang === "ko" ? "애니메이션 다시 보기" : "Replay animation"}</button>
+        </figure>
+      </section>`;
+    }
     const navyMarker = `principle-navy-${page}-${lang}`;
     const goldMarker = `principle-gold-${page}-${lang}`;
     const personIcon = `<g class="principle-person-icon"><circle cx="0" cy="-11" r="11"></circle><path d="M-25 25C-22 5 22 5 25 25"></path></g>`;
@@ -287,8 +314,60 @@
     const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${renderPageBlocks(page)}${diagram(page)}</section>`).join("");
     el("lesson-content").innerHTML = `<header class="lesson-hero"><span class="week-chip">${t.week} ${lessonIndex+1}</span><h2>${escapeHtml(lesson[lang])}</h2><p>${DATA.course[lang].subtitle}</p></header>${pages}<nav class="lesson-pagination"><button data-move="-1" ${lessonIndex===0?'disabled':''}>← ${t.previous}</button><button data-move="1" ${lessonIndex===5?'disabled':''}>${t.next} →</button></nav>`;
     wireAnswers();
+    wireMotionDiagrams();
     updateProgress();
     setHash();
+  }
+
+  function wireMotionDiagrams() {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelectorAll("[data-motion-diagram]").forEach(figure => {
+      const video = figure.querySelector("video");
+      const still = figure.querySelector("img");
+      const replay = figure.querySelector(".motion-replay");
+      let fallbackTimer;
+      const showStill = () => {
+        clearTimeout(fallbackTimer);
+        video.pause();
+        video.hidden = true;
+        still.hidden = false;
+        replay.hidden = false;
+        figure.dataset.state = "still";
+      };
+      const play = () => {
+        clearTimeout(fallbackTimer);
+        still.hidden = true;
+        video.hidden = false;
+        replay.hidden = true;
+        figure.dataset.state = "playing";
+        video.currentTime = 0;
+        const attempt = video.play();
+        if (attempt) attempt.catch(showStill);
+        const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration * 1000 + 300 : 30000;
+        fallbackTimer = setTimeout(showStill, Math.min(30000, Math.max(1000, duration)));
+      };
+      video.addEventListener("ended", showStill);
+      video.addEventListener("error", showStill, {once:true});
+      video.addEventListener("loadedmetadata", () => {
+        if (figure.dataset.state === "playing") {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = setTimeout(showStill, Math.min(30000, Math.max(1000, video.duration * 1000 + 300)));
+        }
+      }, {once:true});
+      replay.addEventListener("click", play);
+      if (reduceMotion) showStill();
+      else if ("IntersectionObserver" in window) {
+        video.pause();
+        figure.dataset.state = "waiting";
+        const observer = new IntersectionObserver(entries => {
+          if (entries.some(entry => entry.isIntersecting)) {
+            observer.disconnect();
+            play();
+          }
+        }, {threshold:.3});
+        observer.observe(figure);
+      } else play();
+    });
   }
 
   function wireAnswers() {
