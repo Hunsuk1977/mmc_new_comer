@@ -8,6 +8,7 @@
       progress: "현재 과 진도", saveTitle: "내 학습 기록", saveCopy: "답과 인도자 메모는 이 기기에 자동 저장됩니다.",
       export: "답안 문서 저장", reset: "현재 과 기록 지우기", print: "인쇄",
       leaderMode: "인도자 메모 표시", leaderNote: "인도자 메모", notePlaceholder: "토의할 내용, 설명할 점, 후속 질문을 적으세요", noteSaved: "메모됨",
+      scriptureMode: "Bible Gateway 구절 미리보기", scriptureHint: "현대인의 성경(KLB)으로 보기",
       previous: "이전 과", next: "다음 과", visual: "학습 도표", complete: "완료",
       footer: "맨하탄선교교회 새신자 제자양육 · 개인 답안은 사용 중인 브라우저에만 저장됩니다.",
       confirmReset: "현재 과에 작성한 답과 인도자 메모를 모두 지울까요?",
@@ -18,6 +19,7 @@
       progress: "Lesson progress", saveTitle: "My study record", saveCopy: "Responses and leader notes are saved automatically on this device.",
       export: "Save response document", reset: "Clear lesson records", print: "Print",
       leaderMode: "Show leader notes", leaderNote: "Leader note", notePlaceholder: "Add discussion points, explanations, or follow-up questions", noteSaved: "Note saved",
+      scriptureMode: "Bible Gateway verse preview", scriptureHint: "View in the NIV",
       previous: "Previous lesson", next: "Next lesson", visual: "Study diagram", complete: "Complete",
       footer: "Manhattan Mission Church New Believer Discipleship · Personal responses remain in this browser.",
       confirmReset: "Clear every response and leader note in this lesson?",
@@ -34,9 +36,9 @@
   function load() {
     try {
       const stored = JSON.parse(localStorage.getItem(STORE)) || {};
-      return { ...stored, answers:stored.answers || {}, notes:stored.notes || {}, leaderMode:Boolean(stored.leaderMode) };
+      return { ...stored, answers:stored.answers || {}, notes:stored.notes || {}, leaderMode:Boolean(stored.leaderMode), scriptureMode:Boolean(stored.scriptureMode) };
     }
-    catch { return { answers: {}, notes: {}, leaderMode:false }; }
+    catch { return { answers: {}, notes: {}, leaderMode:false, scriptureMode:false }; }
   }
   function save() {
     state.lastLang = lang;
@@ -51,6 +53,56 @@
   }
   function escapeHtml(value) {
     return String(value).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  }
+  function scriptureRegex() {
+    const books = lang === "ko"
+      ? ["데살로니가전서","고린도전서","고린도후서","디모데전서","디모데후서","요한계시록","베드로전서","베드로후서","사도행전","마태복음","요한복음","요한일서","갈라디아서","에베소서","빌립보서","골로새서","히브리서","야고보서","역대상","로마서","시편"]
+      : ["1 Thessalonians","1 Corinthians","2 Corinthians","1 Chronicles","1 Timothy","2 Timothy","1 Peter","2 Peter","1 John","Revelation","Philippians","Colossians","Galatians","Ephesians","Hebrews","Matthew","Romans","James","Psalm","Acts","John"];
+    const bookPattern = books.map(book=>book.replace(/\s+/g,"\\s+")).join("|");
+    return lang === "ko"
+      ? new RegExp(`(?:${bookPattern})\\s*\\d+(?:(?::\\s*\\d+(?:\\s*[-~,]\\s*\\d+[하상]?)?)|(?:\\s*[-~]\\s*\\d+\\s*장)|장)?`, "g")
+      : new RegExp(`(?:${bookPattern})\\s+(?:Chapters?\\s+)?\\d+(?:(?::\\s*\\d+(?:\\s*[-~,]\\s*\\d+[a-z]?)?)|(?:\\s*[-~]\\s*\\d+))?`, "gi");
+  }
+  function normalizeReference(reference) {
+    return reference.replace(/~/g,"-").replace(/\s*장$/,"").replace(/\s+Chapters?\s+/i," ").replace(/\s+/g," ").trim();
+  }
+  function canonicalReference(reference) {
+    const normalized = normalizeReference(reference);
+    if (lang !== "ko") return normalized;
+    const books = {
+      "데살로니가전서":"1 Thessalonians", "고린도전서":"1 Corinthians", "고린도후서":"2 Corinthians",
+      "디모데전서":"1 Timothy", "디모데후서":"2 Timothy", "요한계시록":"Revelation",
+      "베드로전서":"1 Peter", "베드로후서":"2 Peter", "사도행전":"Acts", "마태복음":"Matthew",
+      "요한복음":"John", "요한일서":"1 John", "갈라디아서":"Galatians", "에베소서":"Ephesians",
+      "빌립보서":"Philippians", "골로새서":"Colossians", "히브리서":"Hebrews", "야고보서":"James",
+      "역대상":"1 Chronicles", "로마서":"Romans", "시편":"Psalm"
+    };
+    const book = Object.keys(books).find(name => normalized.startsWith(name));
+    return book ? normalized.replace(book, books[book]) : normalized;
+  }
+  function linkifyReferences(value) {
+    const source = String(value);
+    if (!state.scriptureMode) return escapeHtml(source);
+    const regex = scriptureRegex();
+    let html = "";
+    let cursor = 0;
+    source.replace(regex, (match, offset) => {
+      html += escapeHtml(source.slice(cursor, offset));
+      const query = canonicalReference(match);
+      const version = lang === "ko" ? "KLB" : "NIV";
+      const href = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(query)}&version=${version}`;
+      html += `<span class="scripture-reference" aria-label="${escapeHtml(match)}" data-scripture-fallback="${escapeHtml(href)}" title="${UI[lang].scriptureHint}"><span class="scripture-display" data-label="${escapeHtml(match)}" aria-hidden="true"></span><span class="scripture-proxy">${escapeHtml(query)}</span></span>`;
+      cursor = offset + match.length;
+      return match;
+    });
+    return html + escapeHtml(source.slice(cursor));
+  }
+  function activateRefTag() {
+    if (!state.scriptureMode || location.protocol === "file:" || !window.BGLinks) return;
+    window.BGLinks.version = lang === "ko" ? "KLB" : "NIV";
+    window.BGLinks.clickTooltip = true;
+    window.BGLinks.showTooltips = true;
+    requestAnimationFrame(() => window.BGLinks.linkVerses());
   }
   function isScripture(text) {
     return /^[“‘\"]/.test(text) || /(?:NIV|개역|John \d|Romans \d|Psalm \d|요한복음 \d|로마서 \d|시편 \d)/.test(text);
@@ -243,13 +295,13 @@
     const responseClass = block.type === "long" ? (large ? "response-large" : "response-medium") : "response-compact";
     const note = state.notes[key] || "";
     const leaderNote = `<details class="leader-note" data-note-key="${escapeHtml(key)}" ${note?'open':''} ${state.leaderMode?'':'hidden'}><summary><span>${t.leaderNote}</span><small class="note-status">${note?t.noteSaved:""}</small></summary><textarea rows="2" data-leader-note placeholder="${t.notePlaceholder}">${escapeHtml(note)}</textarea></details>`;
-    return `<section class="question ${responseClass} ${value?'answered':''}" data-key="${escapeHtml(key)}"><label class="question-label"><span class="answer-status">${value?t.answered:""}</span>${escapeHtml(block.text)}</label>${control}${leaderNote}</section>`;
+    return `<section class="question ${responseClass} ${value?'answered':''}" data-key="${escapeHtml(key)}"><div class="question-label"><span class="answer-status">${value?t.answered:""}</span>${linkifyReferences(block.text)}</div>${control}${leaderNote}</section>`;
   }
 
   function renderBlock(page, block) {
     if (["short", "long", "yesno"].includes(block.type)) return answerControl(page, block);
-    if (block.type === "heading") return `<h3 class="content-heading">${escapeHtml(block.text)}</h3>`;
-    return `<p class="content-text ${isScripture(block.text)?'scripture':''}">${escapeHtml(block.text)}</p>`;
+    if (block.type === "heading") return `<h3 class="content-heading">${linkifyReferences(block.text)}</h3>`;
+    return `<p class="content-text ${isScripture(block.text)?'scripture':''}">${linkifyReferences(block.text)}</p>`;
   }
 
   function stateDiagram(kind) {
@@ -314,6 +366,8 @@
     el("save-copy").textContent = t.saveCopy;
     el("leader-mode-label").textContent = t.leaderMode;
     el("leader-mode-toggle").checked = state.leaderMode;
+    el("scripture-mode-label").textContent = t.scriptureMode;
+    el("scripture-mode-toggle").checked = state.scriptureMode;
     el("export-button").textContent = t.export;
     el("reset-button").textContent = t.reset;
     el("footer-copy").textContent = t.footer;
@@ -325,6 +379,7 @@
     wireAnswers();
     wireLeaderNotes();
     wireMotionDiagrams();
+    activateRefTag();
     updateProgress();
     setHash();
   }
@@ -461,6 +516,16 @@
   }
 
   document.addEventListener("click", event => {
+    const scriptureFallback = event.target.closest("[data-scripture-fallback]");
+    if (scriptureFallback && (location.protocol === "file:" || !event.target.closest("a"))) {
+      event.preventDefault();
+      const referenceWindow = window.open(scriptureFallback.dataset.scriptureFallback, "nmc-bible-reference", "popup=yes,width=540,height=720,scrollbars=yes,resizable=yes");
+      if (referenceWindow) {
+        try { referenceWindow.opener = null; } catch {}
+        referenceWindow.focus();
+      }
+      return;
+    }
     const langButton = event.target.closest("[data-lang]");
     if (langButton) { lang = langButton.dataset.lang; save(); render(); return; }
     const lessonButton = event.target.closest("[data-lesson]");
@@ -472,6 +537,10 @@
   el("export-button").addEventListener("click", exportAnswers);
   el("leader-mode-toggle").addEventListener("change", event => {
     state.leaderMode = event.target.checked;
+    save(); render();
+  });
+  el("scripture-mode-toggle").addEventListener("change", event => {
+    state.scriptureMode = event.target.checked;
     save(); render();
   });
   el("reset-button").addEventListener("click", () => {
