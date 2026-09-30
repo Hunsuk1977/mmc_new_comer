@@ -20,6 +20,7 @@
 - 질문별 맞춤 답칸과 예/아니요 선택
 - 짧은 답·문장 답·묵상 답에 맞춘 세 단계 답안 공간
 - 답안 자동 저장
+- YouVersion 본문 패널(한국어 현대인의 성경 KLB·영어 NIV)과 다른 한국어 번역본 링크
 - 주차별 답안 JSON 내려받기
 - 인쇄용 화면
 - 모바일·태블릿·데스크톱 반응형 구성
@@ -31,9 +32,28 @@
 - 영어 PDF: 48쪽
 - 웹 학습 범위: 한국어/영어 각각 1과 4–7쪽, 2과 10–13쪽, 3과 16–27쪽, 4과 30–33쪽, 5과 36–39쪽, 6과 42–47쪽
 - 영어 성경 인용은 제공된 영문 원고의 NIV 표기를 그대로 유지했습니다.
+- 교재 안 본문 패널은 한국어 KLB(86)와 영어 NIV(111)를 사용합니다. 새번역·개역한글·읽기 쉬운 성경·우리말성경은 Bible.com 공식 구절 링크로 제공합니다.
 
 제공된 교재에 공식 정답지가 포함되어 있지 않아 웹판도 정답을 임의로 만들지 않습니다. 개인 답안은 브라우저 안에 저장되며 내려받기는 제출이 아닙니다.
 
 ## GitHub Pages 배포
 
 이 폴더의 파일을 GitHub 저장소 `main` 브랜치의 최상위에 올립니다. 저장소의 **Settings → Pages**에서 **Deploy from a branch**, `main`, `/(root)`를 선택하면 웹사이트로 공개할 수 있습니다.
+
+## YouVersion 본문 패널 설정
+
+GitHub Pages의 JavaScript와 설정 파일은 누구나 읽을 수 있으므로 YouVersion 앱 키를 저장소나 브라우저 코드에 넣지 않습니다. 이 프로젝트의 `cloudflare-worker`가 허용된 성경 본문 요청만 대신 전송하도록 구성되어 있습니다.
+
+1. Cloudflare Workers에서 새 Worker를 만들고 `cloudflare-worker/src/index.js`를 배포합니다.
+2. Worker의 **Settings → Variables and Secrets**에서 `YV_APP_KEY`를 **Secret**으로 추가합니다.
+3. `ALLOWED_ORIGIN`은 `https://hunsuk1977.github.io`로 유지합니다.
+4. 배포된 `https://...workers.dev` 주소를 `youversion-config.js`의 `apiBase`에 적습니다.
+5. GitHub Pages를 다시 배포합니다.
+
+Worker는 다음 요청만 허용합니다.
+
+- 현대인의 성경 KLB(86)와 NIV(111)
+- 성경 버전 정보, 특정 구절, 장의 절 목록
+- `https://hunsuk1977.github.io`에서 시작된 읽기 요청
+
+로컬 개발에서 직접 API를 시험해야 할 때만 Git에 포함되지 않는 `.dev.vars`를 사용합니다. 앱 키를 `youversion-config.js`, HTML, JavaScript 또는 GitHub Actions 파일에 넣지 마세요.

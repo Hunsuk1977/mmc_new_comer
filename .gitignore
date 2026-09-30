@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+*.zip
+youversion-config.local.js
+youversion-panel-preview.png
+.dev.vars
+.dev.vars.*
+!.dev.vars.example

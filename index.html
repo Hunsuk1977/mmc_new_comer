@@ -8,7 +8,8 @@
   <meta name="description" content="맨하탄선교교회 6주 새신자 제자양육 · Manhattan Mission Church New Believer Discipleship">
   <title>새로운 삶의 시작 · The Beginning of a New Life</title>
   <link rel="icon" type="image/png" href="assets/mmc-gray-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20260930-9">
+  <link rel="stylesheet" href="https://cdn.youversion.com/platform/1/bible.css">
+  <link rel="stylesheet" href="styles.css?v=20260930-11">
 </head>
 <body>
   <a class="skip-link" href="#lesson-content">본문으로 바로가기</a>
@@ -59,7 +60,28 @@
     <p id="footer-copy"></p>
   </footer>
 
+  <dialog class="bible-reader" id="bible-reader" aria-labelledby="bible-reader-title">
+    <div class="bible-reader-shell">
+      <header class="bible-reader-header">
+        <div>
+          <p class="bible-reader-kicker" id="bible-reader-kicker"></p>
+          <h2 id="bible-reader-title"></h2>
+        </div>
+        <button type="button" class="bible-reader-close" id="bible-reader-close" aria-label="닫기">×</button>
+      </header>
+      <div class="bible-reader-status" id="bible-reader-status" role="status" aria-live="polite"></div>
+      <article class="bible-reader-text" id="bible-reader-text" data-yv-sdk data-slot="yv-bible-renderer"></article>
+      <p class="bible-reader-attribution" id="bible-reader-attribution"></p>
+      <a class="bible-reader-link" id="bible-reader-link" href="https://www.bible.com/" target="_blank" rel="noopener"></a>
+      <div class="bible-reader-alternates" id="bible-reader-alternates" hidden>
+        <p id="bible-reader-alternates-title"></p>
+        <div id="bible-reader-alternates-links"></div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="youversion-config.js?v=20260930-11"></script>
   <script src="course-data.js?v=20260930-9"></script>
-  <script src="app.js?v=20260930-9"></script>
+  <script src="app.js?v=20260930-11"></script>
 </body>
 </html>

@@ -86,6 +86,30 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
 .scripture-external { font-size: .72em; text-decoration: none; }
 .scripture-reference:focus-visible { outline: 3px solid rgba(23,66,107,.24); outline-offset: 2px; }
 
+.bible-reader { width: min(620px, 100%); max-width: none; height: 100%; max-height: none; margin: 0 0 0 auto; padding: 0; border: 0; background: #fff; color: var(--ink); box-shadow: -18px 0 48px rgba(23,32,42,.18); }
+.bible-reader::backdrop { background: rgba(23,32,42,.36); }
+.bible-reader-shell { min-height: 100%; padding: clamp(22px, 5vw, 44px); overflow-y: auto; }
+.bible-reader-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.bible-reader-kicker { margin: 0 0 5px; color: var(--muted); font-size: var(--text-xs); font-weight: 800; letter-spacing: .04em; }
+.bible-reader-header h2 { margin: 0; color: var(--navy); font-size: var(--text-lg); line-height: 1.3; }
+.bible-reader-close { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: #fff; font-size: 1.8rem; line-height: 1; }
+.bible-reader-status { padding: 24px 0; color: var(--muted); font-size: var(--text-sm); }
+.bible-reader-status:empty { display: none; }
+.bible-reader-status strong, .bible-reader-status span { display: block; }
+.bible-reader-status strong { margin-bottom: 6px; color: var(--ink); }
+.bible-reader-text { --yv-reader-font-size: 1.16rem; --yv-reader-line-height: 1.75; --yv-reader-max-width: 58ch; padding: 26px 0 10px; }
+.bible-reader-text:empty { display: none; }
+.bible-passage-break { height: 1px; margin: 24px 0; background: var(--line); }
+.bible-reader-attribution { margin: 24px 0 16px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .72rem; line-height: 1.55; white-space: pre-line; }
+.bible-reader-attribution:empty { display: none; }
+.bible-reader-link { display: inline-flex; min-height: 44px; align-items: center; color: var(--navy); font-size: var(--text-sm); font-weight: 800; text-underline-offset: 4px; }
+.bible-reader-alternates { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.bible-reader-alternates[hidden] { display: none; }
+.bible-reader-alternates > p { margin: 0 0 10px; color: var(--muted); font-size: var(--text-xs); font-weight: 800; }
+.bible-reader-alternates > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.bible-reader-alternates a { display: inline-flex; align-items: center; min-height: 42px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--navy); background: #fff; font-size: var(--text-xs); font-weight: 800; text-decoration: none; }
+.bible-reader-alternates a:hover { background: var(--soft); }
+
 .visual { margin: 32px 0; padding: clamp(18px, 3vw, 28px); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; background: #fbfcfd; }
 .visual h3 { margin: 0 0 18px; font-size: var(--text-sm); color: var(--muted); }
 .circle-grid { display: grid; grid-template-columns: repeat(3, minmax(145px, 1fr)); gap: 14px; min-width: 510px; }
@@ -215,12 +239,14 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
   .study-step-heading { min-height: 0; }
   .study-step-guide { min-height: 0; }
   .tools { margin-top: 32px; }
+  .bible-reader { width: 100%; height: min(82vh, 760px); margin: auto 0 0; border-radius: 18px 18px 0 0; box-shadow: 0 -18px 48px rgba(23,32,42,.18); }
+  .bible-reader-shell { padding: 22px 20px 34px; }
 }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .progress-track span { transition: none; } }
 
 @media print {
-  .site-header, .progress-wrap, .lesson-nav, .tools, .lesson-pagination, .site-footer { display: none !important; }
+  .site-header, .progress-wrap, .lesson-nav, .tools, .lesson-pagination, .site-footer, .bible-reader { display: none !important; }
   .app-shell { display: block; padding: 0; }
   #lesson-content { max-width: none; }
   .lesson-hero { break-after: page; }

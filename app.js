@@ -8,7 +8,8 @@
       progress: "현재 과 진도", saveTitle: "내 학습 기록", saveCopy: "답과 인도자 메모는 이 기기에 자동 저장됩니다.",
       export: "답안 문서 저장", reset: "현재 과 기록 지우기", print: "인쇄",
       leaderMode: "인도자 메모 표시", leaderNote: "인도자 메모", notePlaceholder: "토의할 내용, 설명할 점, 후속 질문을 적으세요", noteSaved: "메모됨",
-      scriptureMode: "Bible Gateway 구절 미리보기", scriptureHint: "현대인의 성경(KLB)으로 보기",
+      scriptureMode: "성경 본문 함께 보기", scriptureHint: "현대인의 성경(KLB)으로 보기",
+      bibleSource: "YouVersion 성경", bibleLoading: "성경 본문을 불러오는 중입니다…", bibleUnavailable: "현재 본문을 불러올 수 없습니다.", bibleRetry: "잠시 후 다시 시도하거나 Bible.com에서 확인해 주세요.", bibleOpen: "Bible.com에서 현대인의 성경으로 열기", bibleClose: "성경 본문 닫기", otherVersions: "다른 한국어 번역본",
       previous: "이전 과", next: "다음 과", visual: "학습 도표", complete: "완료",
       footer: "맨하탄선교교회 새신자 제자양육 · 개인 답안은 사용 중인 브라우저에만 저장됩니다.",
       confirmReset: "현재 과에 작성한 답과 인도자 메모를 모두 지울까요?",
@@ -19,7 +20,8 @@
       progress: "Lesson progress", saveTitle: "My study record", saveCopy: "Responses and leader notes are saved automatically on this device.",
       export: "Save response document", reset: "Clear lesson records", print: "Print",
       leaderMode: "Show leader notes", leaderNote: "Leader note", notePlaceholder: "Add discussion points, explanations, or follow-up questions", noteSaved: "Note saved",
-      scriptureMode: "Bible Gateway verse preview", scriptureHint: "View in the NIV",
+      scriptureMode: "Show Bible passages", scriptureHint: "View in the NIV",
+      bibleSource: "YouVersion Bible", bibleLoading: "Loading the Bible passage…", bibleUnavailable: "Access to this Bible version has not been enabled for this app yet.", bibleRetry: "Try again later or view the passage on Bible.com.", bibleOpen: "Open in Bible.com", bibleClose: "Close Bible passage",
       previous: "Previous lesson", next: "Next lesson", visual: "Study diagram", complete: "Complete",
       footer: "Manhattan Mission Church New Believer Discipleship · Personal responses remain in this browser.",
       confirmReset: "Clear every response and leader note in this lesson?",
@@ -29,6 +31,7 @@
   let state = load();
   let lang = location.hash.includes("lang=en") ? "en" : (state.lastLang || "ko");
   let lessonIndex = lessonFromHash();
+  const bibleCache = new Map();
 
   const el = id => document.getElementById(id);
   const keyFor = (page, block) => `${lang}:${DATA.lessons[lessonIndex].id}:${page}:${block.id}`;
@@ -60,8 +63,8 @@
       : ["1 Thessalonians","1 Corinthians","2 Corinthians","1 Chronicles","1 Timothy","2 Timothy","1 Peter","2 Peter","1 John","Revelation","Philippians","Colossians","Galatians","Ephesians","Hebrews","Matthew","Romans","James","Psalm","Acts","John"];
     const bookPattern = books.map(book=>book.replace(/\s+/g,"\\s+")).join("|");
     return lang === "ko"
-      ? new RegExp(`(?:${bookPattern})\\s*\\d+(?:(?::\\s*\\d+(?:\\s*[-~,]\\s*\\d+[하상]?)?)|(?:\\s*[-~]\\s*\\d+\\s*장)|장)?`, "g")
-      : new RegExp(`(?:${bookPattern})\\s+(?:Chapters?\\s+)?\\d+(?:(?::\\s*\\d+(?:\\s*[-~,]\\s*\\d+[a-z]?)?)|(?:\\s*[-~]\\s*\\d+))?`, "gi");
+      ? new RegExp(`(?:${bookPattern})\\s*\\d+(?:(?::\\s*\\d+[하상]?(?:\\s*[-~,]\\s*(?:\\d+\\s*:\\s*)?\\d+[하상]?)?)|(?:\\s*[-~]\\s*\\d+\\s*장)|장)?`, "g")
+      : new RegExp(`(?:${bookPattern})\\s+(?:Chapters?\\s+)?\\d+(?:(?::\\s*\\d+(?:\\s*[-~,]\\s*(?:\\d+\\s*:\\s*)?\\d+[a-z]?)?)|(?:\\s*[-~]\\s*\\d+))?`, "gi");
   }
   function normalizeReference(reference) {
     return reference.replace(/~/g,"-").replace(/\s*장$/,"").replace(/\s+Chapters?\s+/i," ").replace(/\s+/g," ").trim();
@@ -80,6 +83,54 @@
     const book = Object.keys(books).find(name => normalized.startsWith(name));
     return book ? normalized.replace(book, books[book]) : normalized;
   }
+  function toUsfm(reference) {
+    const normalized = canonicalReference(reference).replace(/[하상]/g, "").trim();
+    const books = {
+      "1 Thessalonians":"1TH", "1 Corinthians":"1CO", "2 Corinthians":"2CO",
+      "1 Timothy":"1TI", "2 Timothy":"2TI", "1 Peter":"1PE", "2 Peter":"2PE",
+      "1 Chronicles":"1CH", "1 John":"1JN", "Revelation":"REV", "Philippians":"PHP",
+      "Colossians":"COL", "Galatians":"GAL", "Ephesians":"EPH", "Matthew":"MAT",
+      "Hebrews":"HEB", "Romans":"ROM", "James":"JAS", "Psalm":"PSA",
+      "Acts":"ACT", "John":"JHN"
+    };
+    const book = Object.keys(books).find(name => normalized.toLowerCase().startsWith(name.toLowerCase()));
+    if (!book) return "";
+    const locator = normalized.slice(book.length).trim().replace(/\s+/g, "").replace(/~/g, "-").replace(/,/g, "-");
+    if (!/^\d+(?:(?::\d+(?:-\d+(?::\d+)?)?)|(?:-\d+))?$/.test(locator)) return "";
+    return `${books[book]}.${locator.replace(/:/g, ".")}`;
+  }
+  function bibleComUrl(usfm, activeLang = lang) {
+    const config = window.NMC_YOUVERSION;
+    const version = config?.versions?.[activeLang] || (activeLang === "ko" ? 86 : 111);
+    const abbreviation = config?.abbreviations?.[activeLang] || (activeLang === "ko" ? "KLB" : "NIV");
+    return `https://www.bible.com/bible/${version}/${encodeURIComponent(usfm)}.${abbreviation}`;
+  }
+  function youVersionRequest(path, config) {
+    const base = String(config?.apiBase || "https://api.youversion.com").replace(/\/$/, "");
+    const headers = {"Accept":"application/json"};
+    if (config?.appKey) headers["X-YVP-App-Key"] = config.appKey;
+    return fetch(`${base}${path}`, {headers});
+  }
+  async function passageIdsFor(usfm, versionId, config) {
+    const chapterRange = usfm.match(/^([1-3]?[A-Z]{2,3})\.(\d+)-(\d+)$/);
+    if (chapterRange) {
+      const [, book, first, last] = chapterRange;
+      const start = Number(first), end = Number(last);
+      if (end >= start && end - start <= 6) return Array.from({length:end-start+1}, (_,i)=>`${book}.${start+i}`);
+    }
+    const crossChapter = usfm.match(/^([1-3]?[A-Z]{2,3})\.(\d+)\.(\d+)-(\d+)\.(\d+)$/);
+    if (crossChapter) {
+      const [, book, firstChapter, firstVerse, lastChapter, lastVerse] = crossChapter;
+      const versesPath = `/v1/bibles/${versionId}/books/${book}/chapters/${firstChapter}/verses`;
+      const versesResponse = await youVersionRequest(versesPath, config);
+      if (!versesResponse.ok) throw new Error(`api-${versesResponse.status}`);
+      const verses = await versesResponse.json();
+      const finalVerse = verses.data?.at(-1)?.id;
+      if (!finalVerse) throw new Error("missing-chapter-index");
+      return [`${book}.${firstChapter}.${firstVerse}-${finalVerse}`, `${book}.${lastChapter}.1-${lastVerse}`];
+    }
+    return [usfm];
+  }
   function linkifyReferences(value) {
     const source = String(value);
     if (!state.scriptureMode) return escapeHtml(source);
@@ -88,15 +139,73 @@
     let cursor = 0;
     source.replace(regex, (match, offset) => {
       html += escapeHtml(source.slice(cursor, offset));
-      const query = canonicalReference(match);
-      const version = lang === "ko" ? "KLB" : "NIV";
-      const href = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(query)}&version=${version}`;
+      const usfm = toUsfm(match);
       const label = lang === "ko" ? `${match} 현대인의 성경으로 보기` : `View ${match} in the NIV`;
-      html += `<a class="scripture-reference" href="${escapeHtml(href)}" target="nmc-bible-reference" rel="noopener" data-scripture-popup="${escapeHtml(href)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">↗</span></a>`;
+      html += usfm
+        ? `<button type="button" class="scripture-reference" data-scripture-reference="${escapeHtml(match)}" data-usfm="${escapeHtml(usfm)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">▣</span></button>`
+        : escapeHtml(match);
       cursor = offset + match.length;
       return match;
     });
     return html + escapeHtml(source.slice(cursor));
+  }
+  async function openBibleReader(button) {
+    const dialog = el("bible-reader");
+    const activeLang = lang;
+    const usfm = button.dataset.usfm;
+    const reference = button.dataset.scriptureReference;
+    const t = UI[activeLang];
+    const config = window.NMC_YOUVERSION;
+    const versionId = config?.versions?.[activeLang];
+    const versionLabel = config?.abbreviations?.[activeLang] || (activeLang === "ko" ? "KLB" : "NIV");
+    el("bible-reader-kicker").textContent = `${t.bibleSource} · ${versionLabel}`;
+    el("bible-reader-title").textContent = reference;
+    el("bible-reader-close").setAttribute("aria-label", t.bibleClose);
+    el("bible-reader-text").innerHTML = "";
+    el("bible-reader-attribution").textContent = "";
+    el("bible-reader-status").textContent = t.bibleLoading;
+    el("bible-reader-link").textContent = t.bibleOpen;
+    el("bible-reader-link").href = bibleComUrl(usfm, activeLang);
+    const alternates = el("bible-reader-alternates");
+    alternates.hidden = activeLang !== "ko";
+    if (activeLang === "ko") {
+      const versions = [
+        {id:142, code:"RNKSV", label:"새번역"},
+        {id:88, code:"KRV", label:"개역한글"},
+        {id:3803, code:"KOERV", label:"읽기 쉬운 성경"},
+        {id:4639, code:"WB", label:"우리말성경"}
+      ];
+      el("bible-reader-alternates-title").textContent = t.otherVersions;
+      el("bible-reader-alternates-links").innerHTML = versions.map(version => `<a href="https://www.bible.com/bible/${version.id}/${encodeURIComponent(usfm)}.${version.code}" target="_blank" rel="noopener">${escapeHtml(version.label)}</a>`).join("");
+    }
+    if (!dialog.open) dialog.showModal();
+    const cacheKey = `${versionId}:${usfm}`;
+    try {
+      let display = bibleCache.get(cacheKey);
+      if (!display) {
+        if ((!config?.apiBase && !config?.appKey) || !versionId) throw new Error("missing-config");
+        const versionPath = `/v1/bibles/${versionId}`;
+        const passageIds = await passageIdsFor(usfm, versionId, config);
+        const [passageResponses, versionResponse] = await Promise.all([
+          Promise.all(passageIds.map(passageId => youVersionRequest(`/v1/bibles/${versionId}/passages/${encodeURIComponent(passageId)}?format=html&include_headings=true&include_notes=true`, config))),
+          youVersionRequest(versionPath, config)
+        ]);
+        const failedPassage = passageResponses.find(response => !response.ok);
+        if (failedPassage || !versionResponse.ok) throw new Error(`api-${failedPassage?.status || versionResponse.status}`);
+        const [passages, version] = await Promise.all([Promise.all(passageResponses.map(response=>response.json())), versionResponse.json()]);
+        const attribution = version.copyright?.trim() || version.promotional_content?.trim();
+        if (passages.some(passage=>!passage.content) || !attribution) throw new Error("incomplete-display");
+        display = {html:passages.map(passage=>passage.content).join('<div class="bible-passage-break" aria-hidden="true"></div>'), attribution};
+        bibleCache.set(cacheKey, display);
+      }
+      if (!dialog.open || lang !== activeLang || el("bible-reader-title").textContent !== reference) return;
+      el("bible-reader-status").textContent = "";
+      el("bible-reader-text").innerHTML = display.html;
+      el("bible-reader-attribution").textContent = display.attribution;
+    } catch (error) {
+      if (!dialog.open) return;
+      el("bible-reader-status").innerHTML = `<strong>${escapeHtml(t.bibleUnavailable)}</strong><span>${escapeHtml(t.bibleRetry)}</span>`;
+    }
   }
   function isScripture(text) {
     return /^[“‘\"]/.test(text) || /(?:NIV|개역|John \d|Romans \d|Psalm \d|요한복음 \d|로마서 \d|시편 \d)/.test(text);
@@ -509,14 +618,9 @@
   }
 
   document.addEventListener("click", event => {
-    const scriptureReference = event.target.closest("[data-scripture-popup]");
+    const scriptureReference = event.target.closest("[data-scripture-reference]");
     if (scriptureReference) {
-      const referenceWindow = window.open(scriptureReference.dataset.scripturePopup, "nmc-bible-reference", "popup=yes,width=540,height=720,scrollbars=yes,resizable=yes");
-      if (referenceWindow) {
-        event.preventDefault();
-        try { referenceWindow.opener = null; } catch {}
-        referenceWindow.focus();
-      }
+      openBibleReader(scriptureReference);
       return;
     }
     const langButton = event.target.closest("[data-lang]");
@@ -527,6 +631,10 @@
     if (move && !move.disabled) moveLesson(Number(move.dataset.move));
   });
   el("print-button").addEventListener("click", () => print());
+  el("bible-reader-close").addEventListener("click", () => el("bible-reader").close());
+  el("bible-reader").addEventListener("click", event => {
+    if (event.target === el("bible-reader")) el("bible-reader").close();
+  });
   el("export-button").addEventListener("click", exportAnswers);
   el("leader-mode-toggle").addEventListener("change", event => {
     state.leaderMode = event.target.checked;
