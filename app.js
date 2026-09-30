@@ -92,7 +92,7 @@
       const version = lang === "ko" ? "KLB" : "NIV";
       const href = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(query)}&version=${version}`;
       const label = lang === "ko" ? `${match} 현대인의 성경으로 보기` : `View ${match} in the NIV`;
-      html += `<button type="button" class="scripture-reference" data-scripture-popup="${escapeHtml(href)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">↗</span></button>`;
+      html += `<a class="scripture-reference" href="${escapeHtml(href)}" target="nmc-bible-reference" rel="noopener" data-scripture-popup="${escapeHtml(href)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">↗</span></a>`;
       cursor = offset + match.length;
       return match;
     });
@@ -511,9 +511,9 @@
   document.addEventListener("click", event => {
     const scriptureReference = event.target.closest("[data-scripture-popup]");
     if (scriptureReference) {
-      event.preventDefault();
       const referenceWindow = window.open(scriptureReference.dataset.scripturePopup, "nmc-bible-reference", "popup=yes,width=540,height=720,scrollbars=yes,resizable=yes");
       if (referenceWindow) {
+        event.preventDefault();
         try { referenceWindow.opener = null; } catch {}
         referenceWindow.focus();
       }
