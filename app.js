@@ -5,20 +5,22 @@
     ko: {
       week: "주차", answered: "작성됨", yes: "예", no: "아니요",
       placeholder: "여기에 답을 적으세요", longPlaceholder: "생각과 적용을 자유롭게 적으세요",
-      progress: "현재 과 진도", saveTitle: "내 학습 기록", saveCopy: "답은 이 기기에 자동 저장됩니다.",
-      export: "답안 내려받기", reset: "현재 과 답 지우기", print: "인쇄",
+      progress: "현재 과 진도", saveTitle: "내 학습 기록", saveCopy: "답과 인도자 메모는 이 기기에 자동 저장됩니다.",
+      export: "답안 문서 저장", reset: "현재 과 기록 지우기", print: "인쇄",
+      leaderMode: "인도자 메모 표시", leaderNote: "인도자 메모", notePlaceholder: "토의할 내용, 설명할 점, 후속 질문을 적으세요", noteSaved: "메모됨",
       previous: "이전 과", next: "다음 과", visual: "학습 도표", complete: "완료",
       footer: "맨하탄선교교회 새신자 제자양육 · 개인 답안은 사용 중인 브라우저에만 저장됩니다.",
-      confirmReset: "현재 과에 작성한 답을 모두 지울까요?",
+      confirmReset: "현재 과에 작성한 답과 인도자 메모를 모두 지울까요?",
     },
     en: {
       week: "Week", answered: "Answered", yes: "Yes", no: "No",
       placeholder: "Write your answer here", longPlaceholder: "Write your reflection and application",
-      progress: "Lesson progress", saveTitle: "My study record", saveCopy: "Your responses are saved automatically on this device.",
-      export: "Download responses", reset: "Clear this lesson", print: "Print",
+      progress: "Lesson progress", saveTitle: "My study record", saveCopy: "Responses and leader notes are saved automatically on this device.",
+      export: "Save response document", reset: "Clear lesson records", print: "Print",
+      leaderMode: "Show leader notes", leaderNote: "Leader note", notePlaceholder: "Add discussion points, explanations, or follow-up questions", noteSaved: "Note saved",
       previous: "Previous lesson", next: "Next lesson", visual: "Study diagram", complete: "Complete",
       footer: "Manhattan Mission Church New Believer Discipleship · Personal responses remain in this browser.",
-      confirmReset: "Clear every response in this lesson?",
+      confirmReset: "Clear every response and leader note in this lesson?",
     }
   };
 
@@ -30,8 +32,11 @@
   const keyFor = (page, block) => `${lang}:${DATA.lessons[lessonIndex].id}:${page}:${block.id}`;
 
   function load() {
-    try { return JSON.parse(localStorage.getItem(STORE)) || { answers: {} }; }
-    catch { return { answers: {} }; }
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORE)) || {};
+      return { ...stored, answers:stored.answers || {}, notes:stored.notes || {}, leaderMode:Boolean(stored.leaderMode) };
+    }
+    catch { return { answers: {}, notes: {}, leaderMode:false }; }
   }
   function save() {
     state.lastLang = lang;
@@ -236,7 +241,9 @@
     }
     const large = /(?:세 가지|여러 가지|자유롭게|기도문|three things|several|write down|prayer)/i.test(block.text);
     const responseClass = block.type === "long" ? (large ? "response-large" : "response-medium") : "response-compact";
-    return `<section class="question ${responseClass} ${value?'answered':''}" data-key="${escapeHtml(key)}"><label class="question-label"><span class="answer-status">${value?t.answered:""}</span>${escapeHtml(block.text)}</label>${control}</section>`;
+    const note = state.notes[key] || "";
+    const leaderNote = `<details class="leader-note" data-note-key="${escapeHtml(key)}" ${note?'open':''} ${state.leaderMode?'':'hidden'}><summary><span>${t.leaderNote}</span><small class="note-status">${note?t.noteSaved:""}</small></summary><textarea rows="2" data-leader-note placeholder="${t.notePlaceholder}">${escapeHtml(note)}</textarea></details>`;
+    return `<section class="question ${responseClass} ${value?'answered':''}" data-key="${escapeHtml(key)}"><label class="question-label"><span class="answer-status">${value?t.answered:""}</span>${escapeHtml(block.text)}</label>${control}${leaderNote}</section>`;
   }
 
   function renderBlock(page, block) {
@@ -305,6 +312,8 @@
     el("print-button").textContent = t.print;
     el("save-title").textContent = t.saveTitle;
     el("save-copy").textContent = t.saveCopy;
+    el("leader-mode-label").textContent = t.leaderMode;
+    el("leader-mode-toggle").checked = state.leaderMode;
     el("export-button").textContent = t.export;
     el("reset-button").textContent = t.reset;
     el("footer-copy").textContent = t.footer;
@@ -314,6 +323,7 @@
     const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${renderPageBlocks(page)}${diagram(page)}</section>`).join("");
     el("lesson-content").innerHTML = `<header class="lesson-hero"><span class="week-chip">${t.week} ${lessonIndex+1}</span><h2>${escapeHtml(lesson[lang])}</h2><p>${DATA.course[lang].subtitle}</p></header>${pages}<nav class="lesson-pagination"><button data-move="-1" ${lessonIndex===0?'disabled':''}>← ${t.previous}</button><button data-move="1" ${lessonIndex===5?'disabled':''}>${t.next} →</button></nav>`;
     wireAnswers();
+    wireLeaderNotes();
     wireMotionDiagrams();
     updateProgress();
     setHash();
@@ -382,7 +392,7 @@
         if (event.target.tagName === "TEXTAREA") autoGrow(event.target);
         save(); updateProgress();
       };
-      card.querySelectorAll("input,textarea").forEach(control => {
+      card.querySelectorAll('input[type="radio"], [data-answer]').forEach(control => {
         control.addEventListener("input", handler);
         control.addEventListener("change", handler);
         if (control.tagName === "TEXTAREA") autoGrow(control);
@@ -393,6 +403,20 @@
         state.answers[control.dataset.inlineKey] = control.value;
         save();
       });
+    });
+  }
+  function wireLeaderNotes() {
+    document.querySelectorAll("[data-note-key]").forEach(noteCard => {
+      const textarea = noteCard.querySelector("[data-leader-note]");
+      const status = noteCard.querySelector(".note-status");
+      textarea.addEventListener("input", () => {
+        const value = textarea.value;
+        state.notes[noteCard.dataset.noteKey] = value;
+        status.textContent = value.trim() ? UI[lang].noteSaved : "";
+        autoGrow(textarea);
+        save();
+      });
+      autoGrow(textarea);
     });
   }
   function autoGrow(textarea) {
@@ -418,13 +442,22 @@
     lesson.pages.forEach(page => DATA.pages[lang][page].forEach(block => {
       if (!["short","long","yesno"].includes(block.type)) return;
       const key = keyFor(page,block);
-      records.push({page,id:block.id,prompt:block.text,response:state.answers[key] || ""});
+      const response = state.answers[key] || "";
+      records.push({page,id:block.id,prompt:block.text,response:response === "yes" ? UI[lang].yes : response === "no" ? UI[lang].no : response,note:state.notes[key] || ""});
     }));
     const prayerPrefix = `${lang}:${lesson.id}:46:prayer-`;
     const prayerEntries = Object.entries(state.answers).filter(([key])=>key.startsWith(prayerPrefix)).map(([key,response])=>({id:key.slice(prayerPrefix.length),response}));
-    const payload = {course:DATA.course[lang].title,language:lang,lesson:lesson[lang],createdAt:new Date().toISOString(),responses:records,prayerRequests:prayerEntries};
-    const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`nmc-new-life-${lang}-week-${lessonIndex+1}.json`; a.click(); URL.revokeObjectURL(a.href);
+    const text = value => escapeHtml(value || "").replace(/\n/g,"<br>");
+    const date = new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : "en-US", {dateStyle:"long",timeStyle:"short"}).format(new Date());
+    const responseLabel = lang === "ko" ? "학습자 답" : "Response";
+    const noteLabel = UI[lang].leaderNote;
+    const prayerTitle = lang === "ko" ? "중보기도 기록" : "Intercession record";
+    const empty = lang === "ko" ? "작성하지 않음" : "Not answered";
+    const cards = records.map((item,index)=>`<section><p class="number">${index+1}</p><h2>${text(item.prompt)}</h2><div class="answer"><strong>${responseLabel}</strong><p>${text(item.response)||empty}</p></div>${item.note?`<div class="note"><strong>${noteLabel}</strong><p>${text(item.note)}</p></div>`:""}</section>`).join("");
+    const prayers = prayerEntries.length ? `<section class="prayers"><h2>${prayerTitle}</h2>${prayerEntries.map(item=>`<p>${text(item.response)}</p>`).join("")}</section>` : "";
+    const documentHtml = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${text(lesson[lang])}</title><style>body{max-width:780px;margin:0 auto;padding:48px 24px;color:#17202a;font:16px/1.65 system-ui,sans-serif}header{padding-bottom:28px;border-bottom:3px solid #17426b}h1{margin:8px 0;font-size:2rem}header p,.number{color:#66717d}section{padding:26px 0;border-bottom:1px solid #d9dee3;break-inside:avoid}h2{font-size:1.05rem}.answer,.note{margin-top:14px;padding:15px 18px;border-radius:10px;background:#f4f6f8}.note{background:#fff8da;border-left:4px solid #f5ce2e}.answer p,.note p{margin:5px 0 0;white-space:normal}.prayers p{min-height:30px;border-bottom:1px solid #aaa}@media print{body{padding:0}}</style></head><body><header><p>${text(DATA.course[lang].subtitle)}</p><h1>${text(lesson[lang])}</h1><p>${date}</p></header>${cards}${prayers}</body></html>`;
+    const blob = new Blob([documentHtml],{type:"text/html;charset=utf-8"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`nmc-new-life-${lang}-week-${lessonIndex+1}.html`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }
 
   document.addEventListener("click", event => {
@@ -437,10 +470,15 @@
   });
   el("print-button").addEventListener("click", () => print());
   el("export-button").addEventListener("click", exportAnswers);
+  el("leader-mode-toggle").addEventListener("change", event => {
+    state.leaderMode = event.target.checked;
+    save(); render();
+  });
   el("reset-button").addEventListener("click", () => {
     if (!confirm(UI[lang].confirmReset)) return;
     const prefix = `${lang}:${DATA.lessons[lessonIndex].id}:`;
     Object.keys(state.answers).filter(k=>k.startsWith(prefix)).forEach(k=>delete state.answers[k]);
+    Object.keys(state.notes).filter(k=>k.startsWith(prefix)).forEach(k=>delete state.notes[k]);
     save(); render();
   });
   addEventListener("hashchange", () => { lessonIndex = lessonFromHash(); render(); });
