@@ -82,11 +82,9 @@ h1 { margin: 0; font-size: var(--text-md); line-height: var(--leading-tight); le
 .choice-row label { min-height: 48px; min-width: 112px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 9px 16px; border: 1px solid var(--line); border-radius: 8px; font-size: var(--text-sm); font-weight: 700; }
 .choice-row label:has(input:checked) { border-color: var(--navy); background: #edf4fa; }
 input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px solid rgba(23,66,107,.24); outline-offset: 2px; }
-.scripture-reference { position: relative; display: inline-block; margin-inline: 2px; padding: 0 4px; border-radius: 4px; color: var(--navy); background: #fff3b8; font-weight: 800; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: pointer; }
-.scripture-display::before { content: attr(data-label); }
-.scripture-proxy { position: absolute; inset: 0; display: block; overflow: visible; opacity: 0; white-space: nowrap; }
-.scripture-proxy > a { position: absolute; inset: 0; display: block; overflow: hidden; color: transparent !important; font-size: 0; }
-.scripture-reference:focus-within { outline: 3px solid rgba(23,66,107,.24); outline-offset: 2px; }
+.scripture-reference { display: inline-flex; align-items: baseline; gap: 3px; margin-inline: 2px; padding: 0 4px; border: 0; border-radius: 4px; color: var(--navy); background: #fff3b8; font: inherit; font-weight: 800; line-height: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: pointer; vertical-align: baseline; }
+.scripture-external { font-size: .72em; text-decoration: none; }
+.scripture-reference:focus-visible { outline: 3px solid rgba(23,66,107,.24); outline-offset: 2px; }
 
 .visual { margin: 32px 0; padding: clamp(18px, 3vw, 28px); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; background: #fbfcfd; }
 .visual h3 { margin: 0 0 18px; font-size: var(--text-sm); color: var(--muted); }
@@ -232,7 +230,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
   .principle-motion-still { display: block !important; }
   .motion-replay { display: none !important; }
   .scripture-reference { margin: 0; padding: 0; color: inherit; background: transparent; text-decoration: none; }
-  .scripture-proxy { display: none; }
+  .scripture-external { display: none; }
   .question { border: 1px solid #888; }
   .question input, .question textarea { border: 0 !important; border-bottom: 1px solid #888 !important; }
 }

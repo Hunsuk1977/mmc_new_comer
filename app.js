@@ -91,18 +91,12 @@
       const query = canonicalReference(match);
       const version = lang === "ko" ? "KLB" : "NIV";
       const href = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(query)}&version=${version}`;
-      html += `<span class="scripture-reference" aria-label="${escapeHtml(match)}" data-scripture-fallback="${escapeHtml(href)}" title="${UI[lang].scriptureHint}"><span class="scripture-display" data-label="${escapeHtml(match)}" aria-hidden="true"></span><span class="scripture-proxy">${escapeHtml(query)}</span></span>`;
+      const label = lang === "ko" ? `${match} 현대인의 성경으로 보기` : `View ${match} in the NIV`;
+      html += `<button type="button" class="scripture-reference" data-scripture-popup="${escapeHtml(href)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">↗</span></button>`;
       cursor = offset + match.length;
       return match;
     });
     return html + escapeHtml(source.slice(cursor));
-  }
-  function activateRefTag() {
-    if (!state.scriptureMode || location.protocol === "file:" || !window.BGLinks) return;
-    window.BGLinks.version = lang === "ko" ? "KLB" : "NIV";
-    window.BGLinks.clickTooltip = true;
-    window.BGLinks.showTooltips = true;
-    requestAnimationFrame(() => window.BGLinks.linkVerses());
   }
   function isScripture(text) {
     return /^[“‘\"]/.test(text) || /(?:NIV|개역|John \d|Romans \d|Psalm \d|요한복음 \d|로마서 \d|시편 \d)/.test(text);
@@ -379,7 +373,6 @@
     wireAnswers();
     wireLeaderNotes();
     wireMotionDiagrams();
-    activateRefTag();
     updateProgress();
     setHash();
   }
@@ -516,10 +509,10 @@
   }
 
   document.addEventListener("click", event => {
-    const scriptureFallback = event.target.closest("[data-scripture-fallback]");
-    if (scriptureFallback && (location.protocol === "file:" || !event.target.closest("a"))) {
+    const scriptureReference = event.target.closest("[data-scripture-popup]");
+    if (scriptureReference) {
       event.preventDefault();
-      const referenceWindow = window.open(scriptureFallback.dataset.scriptureFallback, "nmc-bible-reference", "popup=yes,width=540,height=720,scrollbars=yes,resizable=yes");
+      const referenceWindow = window.open(scriptureReference.dataset.scripturePopup, "nmc-bible-reference", "popup=yes,width=540,height=720,scrollbars=yes,resizable=yes");
       if (referenceWindow) {
         try { referenceWindow.opener = null; } catch {}
         referenceWindow.focus();
