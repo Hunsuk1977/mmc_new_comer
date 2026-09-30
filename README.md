@@ -42,18 +42,17 @@
 
 ## YouVersion 본문 패널 설정
 
-GitHub Pages의 JavaScript와 설정 파일은 누구나 읽을 수 있으므로 YouVersion 앱 키를 저장소나 브라우저 코드에 넣지 않습니다. 이 프로젝트의 `cloudflare-worker`가 허용된 성경 본문 요청만 대신 전송하도록 구성되어 있습니다.
+GitHub Pages의 JavaScript와 설정 파일은 누구나 읽을 수 있으므로 YouVersion 앱 키를 저장소나 브라우저 코드에 넣지 않습니다. 이 프로젝트의 Supabase Edge Function `youversion`이 허용된 성경 본문 요청만 대신 전송합니다.
 
-1. Cloudflare Workers에서 새 Worker를 만들고 `cloudflare-worker/src/index.js`를 배포합니다.
-2. Worker의 **Settings → Variables and Secrets**에서 `YV_APP_KEY`를 **Secret**으로 추가합니다.
-3. `ALLOWED_ORIGIN`은 `https://hunsuk1977.github.io`로 유지합니다.
-4. 배포된 `https://...workers.dev` 주소를 `youversion-config.js`의 `apiBase`에 적습니다.
-5. GitHub Pages를 다시 배포합니다.
+1. `supabase/functions/youversion`을 연결된 Supabase 프로젝트에 배포합니다.
+2. Supabase의 **Edge Functions → Secrets**에서 `YOUVERSION_APP_KEY`를 추가합니다.
+3. `supabase/config.toml`의 `verify_jwt = false`를 유지하여 로그인하지 않은 학습자도 본문을 읽게 합니다.
+4. `youversion-config.js`의 `apiBase`가 배포된 프로젝트의 Function URL을 가리키는지 확인합니다.
 
-Worker는 다음 요청만 허용합니다.
+Edge Function은 다음 요청만 허용합니다.
 
 - 현대인의 성경 KLB(86)와 NIV(111)
 - 성경 버전 정보, 특정 구절, 장의 절 목록
 - `https://hunsuk1977.github.io`에서 시작된 읽기 요청
 
-로컬 개발에서 직접 API를 시험해야 할 때만 Git에 포함되지 않는 `.dev.vars`를 사용합니다. 앱 키를 `youversion-config.js`, HTML, JavaScript 또는 GitHub Actions 파일에 넣지 마세요.
+앱 키를 `youversion-config.js`, HTML, JavaScript, GitHub Actions 파일 또는 Supabase 설정 파일에 넣지 마세요.

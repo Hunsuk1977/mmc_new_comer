@@ -1,0 +1,4 @@
+project_id = "ayybmznqbpufphxlvjeg"
+
+[functions.youversion]
+verify_jwt = false
