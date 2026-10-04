@@ -29,7 +29,8 @@
   };
 
   let state = load();
-  let lang = location.hash.includes("lang=en") ? "en" : (state.lastLang || "ko");
+  let lang = location.hash.includes("lang=en") ? "en" : location.hash.includes("lang=ko") ? "ko" : (state.lastLang || "ko");
+  let parallel = location.hash.includes("view=parallel") || (!location.hash.includes("view=single") && Boolean(state.parallel));
   let lessonIndex = lessonFromHash();
   const bibleCache = new Map();
 
@@ -45,6 +46,7 @@
   }
   function save() {
     state.lastLang = lang;
+    state.parallel = parallel;
     localStorage.setItem(STORE, JSON.stringify(state));
   }
   function lessonFromHash() {
@@ -52,7 +54,7 @@
     return Math.min(5, Math.max(0, (match ? Number(match[1]) : 1) - 1));
   }
   function setHash() {
-    history.replaceState(null, "", `#lang=${lang}&lesson=${lessonIndex + 1}`);
+    history.replaceState(null, "", `#lang=${lang}&lesson=${lessonIndex + 1}&view=${parallel ? "parallel" : "single"}`);
   }
   function escapeHtml(value) {
     return String(value).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -142,7 +144,7 @@
       const usfm = toUsfm(match);
       const label = lang === "ko" ? `${match} 현대인의 성경으로 보기` : `View ${match} in the NIV`;
       html += usfm
-        ? `<button type="button" class="scripture-reference" data-scripture-reference="${escapeHtml(match)}" data-usfm="${escapeHtml(usfm)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">▣</span></button>`
+        ? `<button type="button" class="scripture-reference" data-scripture-lang="${lang}" data-scripture-reference="${escapeHtml(match)}" data-usfm="${escapeHtml(usfm)}" aria-label="${escapeHtml(label)}" title="${UI[lang].scriptureHint}"><span>${escapeHtml(match)}</span><span class="scripture-external" aria-hidden="true">▣</span></button>`
         : escapeHtml(match);
       cursor = offset + match.length;
       return match;
@@ -151,7 +153,7 @@
   }
   async function openBibleReader(button) {
     const dialog = el("bible-reader");
-    const activeLang = lang;
+    const activeLang = button.dataset.scriptureLang || lang;
     const usfm = button.dataset.usfm;
     const reference = button.dataset.scriptureReference;
     const t = UI[activeLang];
@@ -198,7 +200,7 @@
         display = {html:passages.map(passage=>passage.content).join('<div class="bible-passage-break" aria-hidden="true"></div>'), attribution};
         bibleCache.set(cacheKey, display);
       }
-      if (!dialog.open || lang !== activeLang || el("bible-reader-title").textContent !== reference) return;
+      if (!dialog.open || el("bible-reader-title").textContent !== reference) return;
       el("bible-reader-status").textContent = "";
       el("bible-reader-text").innerHTML = display.html;
       el("bible-reader-attribution").textContent = display.attribution;
@@ -252,8 +254,8 @@
     }[lang][page];
     if (media) {
       const base = `assets/lesson-04/${media.file}`;
-      return `<section class="principle-visual" aria-labelledby="principle-title-${page}">
-        <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}">${x.title}</h3><p>${x.summary}</p></div></header>
+      return `<section class="principle-visual" aria-labelledby="principle-title-${page}-${lang}">
+        <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}-${lang}">${x.title}</h3><p>${x.summary}</p></div></header>
         <figure class="principle-motion" data-motion-diagram>
           <div class="principle-motion-stage">
             <video class="principle-motion-video" muted playsinline preload="metadata" poster="${base}.png" aria-label="${media.alt}">
@@ -270,10 +272,10 @@
     const personIcon = `<g class="principle-person-icon"><circle cx="0" cy="-11" r="11"></circle><path d="M-25 25C-22 5 22 5 25 25"></path></g>`;
     const godIcon = `<g class="principle-god-icon"><circle cx="0" cy="0" r="17"></circle><path d="M0-32V-25M0 25V32M-32 0H-25M25 0H32M-23-23L-18-18M18 18L23 23M23-23L18-18M-18 18L-23 23"></path></g>`;
     if (page === 30) {
-      return `<section class="principle-visual" aria-labelledby="principle-title-${page}">
-        <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}">${x.title}</h3><p>${x.summary}</p></div></header>
-        <svg class="principle-diagram principle-diagram-prayer" viewBox="0 0 680 360" role="img" aria-labelledby="principle-svg-title-${page} principle-svg-desc-${page}">
-          <title id="principle-svg-title-${page}">${x.title}</title><desc id="principle-svg-desc-${page}">${x.summary}</desc>
+      return `<section class="principle-visual" aria-labelledby="principle-title-${page}-${lang}">
+        <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}-${lang}">${x.title}</h3><p>${x.summary}</p></div></header>
+        <svg class="principle-diagram principle-diagram-prayer" viewBox="0 0 680 360" role="img" aria-labelledby="principle-svg-title-${page}-${lang} principle-svg-desc-${page}-${lang}">
+          <title id="principle-svg-title-${page}-${lang}">${x.title}</title><desc id="principle-svg-desc-${page}-${lang}">${x.summary}</desc>
           <defs>
             <linearGradient id="prayer-line-${lang}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#49799f"></stop><stop offset="1" stop-color="#17426b"></stop></linearGradient>
             <marker id="${navyMarker}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#17426b"></path></marker>
@@ -287,10 +289,10 @@
         </svg>
       </section>`;
     }
-    return `<section class="principle-visual" aria-labelledby="principle-title-${page}">
-      <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}">${x.title}</h3><p>${x.summary}</p></div></header>
-      <svg class="principle-diagram" viewBox="0 0 680 440" role="img" aria-labelledby="principle-svg-title-${page} principle-svg-desc-${page}">
-        <title id="principle-svg-title-${page}">${x.title}</title><desc id="principle-svg-desc-${page}">${x.summary}</desc>
+    return `<section class="principle-visual" aria-labelledby="principle-title-${page}-${lang}">
+      <header class="principle-copy"><span>${x.number}</span><div><h3 id="principle-title-${page}-${lang}">${x.title}</h3><p>${x.summary}</p></div></header>
+      <svg class="principle-diagram" viewBox="0 0 680 440" role="img" aria-labelledby="principle-svg-title-${page}-${lang} principle-svg-desc-${page}-${lang}">
+        <title id="principle-svg-title-${page}-${lang}">${x.title}</title><desc id="principle-svg-desc-${page}-${lang}">${x.summary}</desc>
         <defs>
           <marker id="${navyMarker}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#17426b"></path></marker>
           <marker id="${goldMarker}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c89a00"></path></marker>
@@ -320,9 +322,9 @@
         ? {title:"믿음의 기차", fact:"사실", faith:"믿음", feeling:"감정", engine:"기관차", car:"연결 차량", caboose:"후미 차량", desc:"사실이 기관차가 되어 믿음을 이끌고, 감정은 그 뒤를 따릅니다. 믿음은 감정이 아니라 하나님과 그분의 말씀이라는 사실에 근거합니다."}
         : {title:"The train of faith", fact:"Fact", faith:"Faith", feeling:"Feeling", engine:"Locomotive", car:"Connecting car", caboose:"Caboose", desc:"Fact is the locomotive that leads faith, and feeling follows behind. Faith rests on the fact of God and His Word rather than allowing feelings to determine direction."};
       return `<section class="visual" aria-label="${labels.title}"><h3>${labels.title}</h3>
-        <svg class="faith-train" viewBox="0 0 920 300" role="img" aria-labelledby="faith-train-title faith-train-desc">
-          <title id="faith-train-title">${labels.title}: ${labels.fact}, ${labels.faith}, ${labels.feeling}</title>
-          <desc id="faith-train-desc">${labels.desc}</desc>
+        <svg class="faith-train" viewBox="0 0 920 300" role="img" aria-labelledby="faith-train-title-${lang} faith-train-desc-${lang}">
+          <title id="faith-train-title-${lang}">${labels.title}: ${labels.fact}, ${labels.faith}, ${labels.feeling}</title>
+          <desc id="faith-train-desc-${lang}">${labels.desc}</desc>
           <g fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
             <path d="M22 252H895M22 270H895" opacity=".55"/>
             <path d="M55 270l-18 22M125 270l-18 22M195 270l-18 22M265 270l-18 22M335 270l-18 22M405 270l-18 22M475 270l-18 22M545 270l-18 22M615 270l-18 22M685 270l-18 22M755 270l-18 22M825 270l-18 22" opacity=".35"/>
@@ -368,7 +370,7 @@
               {name:"Application", verb:"How will I live it?", guide:"Write a personal, specific, and realistic action you can take today.", sample:"I will entrust my finances, relationships, fears, and worries to the Lord in prayer."}
             ]
           };
-      return `<section class="study-method" aria-labelledby="study-method-title"><header><span>01—04</span><div><h3 id="study-method-title">${method.title}</h3><p>${method.intro}</p></div></header><ol class="study-method-grid">${method.steps.map((step,i)=>`<li><div class="study-step-heading"><strong>${String(i+1).padStart(2,'0')}</strong><div><h4>${step.name}</h4><p>${step.verb}</p></div></div><p class="study-step-guide">${step.guide}</p><div class="study-step-example"><span>${method.example}</span><p>${step.sample}</p></div></li>`).join("")}</ol></section>`;
+      return `<section class="study-method" aria-labelledby="study-method-title-${lang}"><header><span>01—04</span><div><h3 id="study-method-title-${lang}">${method.title}</h3><p>${method.intro}</p></div></header><ol class="study-method-grid">${method.steps.map((step,i)=>`<li><div class="study-step-heading"><strong>${String(i+1).padStart(2,'0')}</strong><div><h4>${step.name}</h4><p>${step.verb}</p></div></div><p class="study-step-guide">${step.guide}</p><div class="study-step-example"><span>${method.example}</span><p>${step.sample}</p></div></li>`).join("")}</ol></section>`;
     }
     if (page === 46) {
       const who = lang === "ko" ? "친구" : "Person";
@@ -474,10 +476,20 @@
     el("export-button").textContent = t.export;
     el("reset-button").textContent = t.reset;
     el("footer-copy").textContent = t.footer;
-    document.querySelectorAll("[data-lang]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.lang === lang)));
+    document.querySelectorAll("[data-lang]").forEach(button => button.setAttribute("aria-pressed", String(parallel ? button.dataset.lang === "parallel" : button.dataset.lang === lang)));
 
     el("lesson-nav").innerHTML = DATA.lessons.map((item,i)=>`<button class="lesson-link" data-lesson="${i}" ${i===lessonIndex?'aria-current="page"':''}><span>${String(i+1).padStart(2,'0')}</span><span>${escapeHtml(item[lang])}</span></button>`).join("");
-    const pages = lesson.pages.map(page => `<section class="source-page" data-page="${page}">${renderPageBlocks(page)}${diagram(page)}</section>`).join("");
+    document.body.classList.toggle("parallel-mode", parallel);
+    const primaryLang = lang;
+    const pages = lesson.pages.map(page => {
+      if (!parallel) return `<section class="source-page" data-page="${page}">${renderPageBlocks(page)}${diagram(page)}</section>`;
+      const columns = ["ko", "en"].map(columnLang => {
+        lang = columnLang;
+        return `<article class="parallel-column" lang="${columnLang}" data-content-lang="${columnLang}"><p class="parallel-language">${columnLang === "ko" ? "한국어" : "English"}</p>${renderPageBlocks(page)}${diagram(page)}</article>`;
+      }).join("");
+      lang = primaryLang;
+      return `<section class="source-page parallel-page" data-page="${page}">${columns}</section>`;
+    }).join("");
     el("lesson-content").innerHTML = `<header class="lesson-hero"><span class="week-chip">${t.week} ${lessonIndex+1}</span><h2>${escapeHtml(lesson[lang])}</h2><p>${DATA.course[lang].subtitle}</p></header>${pages}<nav class="lesson-pagination"><button data-move="-1" ${lessonIndex===0?'disabled':''}>← ${t.previous}</button><button data-move="1" ${lessonIndex===5?'disabled':''}>${t.next} →</button></nav>`;
     wireAnswers();
     wireLeaderNotes();
@@ -545,7 +557,7 @@
           : event.target.value;
         state.answers[card.dataset.key] = value;
         card.classList.toggle("answered", Boolean(value.trim()));
-        card.querySelector(".answer-status").textContent = value.trim() ? UI[lang].answered : "";
+        card.querySelector(".answer-status").textContent = value.trim() ? UI[card.dataset.key.split(":")[0]].answered : "";
         if (event.target.tagName === "TEXTAREA") autoGrow(event.target);
         save(); updateProgress();
       };
@@ -569,7 +581,7 @@
       textarea.addEventListener("input", () => {
         const value = textarea.value;
         state.notes[noteCard.dataset.noteKey] = value;
-        status.textContent = value.trim() ? UI[lang].noteSaved : "";
+        status.textContent = value.trim() ? UI[noteCard.dataset.noteKey.split(":")[0]].noteSaved : "";
         autoGrow(textarea);
         save();
       });
@@ -593,7 +605,18 @@
     render();
     scrollTo({top:0,behavior:"smooth"});
   }
-  function exportAnswers() {
+  function exportAnswers(capture = false) {
+    if (parallel) {
+      const originalLang = lang;
+      parallel = false;
+      try {
+        const editions = ["ko", "en"].map(l => { lang = l; const html = exportAnswers(true); return `<article lang="${l}"><h1>${l === "ko" ? "한국어" : "English"}</h1>${html.match(/<body>([\s\S]*)<\/body>/)[1]}</article>`; });
+        const html = `<!doctype html><html lang="ko"><meta charset="utf-8"><title>한국어 + English</title><style>body{font:16px/1.7 system-ui;margin:32px}main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px}article{min-width:0}section{padding:20px 0;border-bottom:1px solid #ddd}h2{font-size:1.1rem}.answer,.note{padding:12px;background:#f4f6f8}@media(max-width:700px){main{display:block}}</style><main>${editions.join("")}</main></html>`;
+        downloadResponses(html, "parallel");
+      }
+      finally { lang = originalLang; parallel = true; }
+      return;
+    }
     const lesson = DATA.lessons[lessonIndex];
     const records = [];
     lesson.pages.forEach(page => DATA.pages[lang][page].forEach(block => {
@@ -613,8 +636,12 @@
     const cards = records.map((item,index)=>`<section><p class="number">${index+1}</p><h2>${text(item.prompt)}</h2><div class="answer"><strong>${responseLabel}</strong><p>${text(item.response)||empty}</p></div>${item.note?`<div class="note"><strong>${noteLabel}</strong><p>${text(item.note)}</p></div>`:""}</section>`).join("");
     const prayers = prayerEntries.length ? `<section class="prayers"><h2>${prayerTitle}</h2>${prayerEntries.map(item=>`<p>${text(item.response)}</p>`).join("")}</section>` : "";
     const documentHtml = `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${text(lesson[lang])}</title><style>body{max-width:780px;margin:0 auto;padding:48px 24px;color:#17202a;font:16px/1.65 system-ui,sans-serif}header{padding-bottom:28px;border-bottom:3px solid #17426b}h1{margin:8px 0;font-size:2rem}header p,.number{color:#66717d}section{padding:26px 0;border-bottom:1px solid #d9dee3;break-inside:avoid}h2{font-size:1.05rem}.answer,.note{margin-top:14px;padding:15px 18px;border-radius:10px;background:#f4f6f8}.note{background:#fff8da;border-left:4px solid #f5ce2e}.answer p,.note p{margin:5px 0 0;white-space:normal}.prayers p{min-height:30px;border-bottom:1px solid #aaa}@media print{body{padding:0}}</style></head><body><header><p>${text(DATA.course[lang].subtitle)}</p><h1>${text(lesson[lang])}</h1><p>${date}</p></header>${cards}${prayers}</body></html>`;
+    if (capture) return documentHtml;
+    downloadResponses(documentHtml, lang);
+  }
+  function downloadResponses(documentHtml, edition) {
     const blob = new Blob([documentHtml],{type:"text/html;charset=utf-8"});
-    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`nmc-new-life-${lang}-week-${lessonIndex+1}.html`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`nmc-new-life-${edition}-week-${lessonIndex+1}.html`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }
 
   document.addEventListener("click", event => {
@@ -624,7 +651,7 @@
       return;
     }
     const langButton = event.target.closest("[data-lang]");
-    if (langButton) { lang = langButton.dataset.lang; save(); render(); return; }
+    if (langButton) { parallel = langButton.dataset.lang === "parallel"; if (!parallel) lang = langButton.dataset.lang; el("bible-reader").close(); save(); render(); return; }
     const lessonButton = event.target.closest("[data-lesson]");
     if (lessonButton) { lessonIndex = Number(lessonButton.dataset.lesson); render(); scrollTo({top:0,behavior:"smooth"}); return; }
     const move = event.target.closest("[data-move]");
@@ -635,7 +662,7 @@
   el("bible-reader").addEventListener("click", event => {
     if (event.target === el("bible-reader")) el("bible-reader").close();
   });
-  el("export-button").addEventListener("click", exportAnswers);
+  el("export-button").addEventListener("click", () => exportAnswers());
   el("leader-mode-toggle").addEventListener("change", event => {
     state.leaderMode = event.target.checked;
     save(); render();
@@ -645,12 +672,12 @@
     save(); render();
   });
   el("reset-button").addEventListener("click", () => {
-    if (!confirm(UI[lang].confirmReset)) return;
-    const prefix = `${lang}:${DATA.lessons[lessonIndex].id}:`;
-    Object.keys(state.answers).filter(k=>k.startsWith(prefix)).forEach(k=>delete state.answers[k]);
-    Object.keys(state.notes).filter(k=>k.startsWith(prefix)).forEach(k=>delete state.notes[k]);
+    if (!confirm(parallel ? "현재 과의 한국어와 영어 답안 및 인도자 메모를 모두 지울까요? / Clear Korean and English records for this lesson?" : UI[lang].confirmReset)) return;
+    const prefixes = (parallel ? ["ko", "en"] : [lang]).map(l => `${l}:${DATA.lessons[lessonIndex].id}:`);
+    Object.keys(state.answers).filter(k=>prefixes.some(prefix=>k.startsWith(prefix))).forEach(k=>delete state.answers[k]);
+    Object.keys(state.notes).filter(k=>prefixes.some(prefix=>k.startsWith(prefix))).forEach(k=>delete state.notes[k]);
     save(); render();
   });
-  addEventListener("hashchange", () => { lessonIndex = lessonFromHash(); render(); });
+  addEventListener("hashchange", () => { lang = location.hash.includes("lang=en") ? "en" : "ko"; parallel = location.hash.includes("view=parallel"); lessonIndex = lessonFromHash(); render(); });
   render();
 })();
