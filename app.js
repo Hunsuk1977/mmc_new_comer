@@ -315,7 +315,7 @@
       const names = lang === "ko"
         ? [["비그리스도인", "그리스도가 밖에 있음"], ["그리스도 중심", "그리스도가 삶을 다스림"], ["자아 중심", "자아가 삶을 다스림"]]
         : [["Non-Christian", "Christ is outside"], ["Christ-directed", "Christ directs life"], ["Self-directed", "Self directs life"]];
-      return `<section class="visual" aria-label="${t.visual}"><h3>${t.visual}</h3><div class="circle-grid">${names.map((n,i)=>`<div class="circle-card"><div class="life-circle ${i===0?'outside':''}"><span>${i===2?'S':'†'}</span><span class="cross">${i===2?'†':'S'}</span></div><strong>${n[0]}</strong><small>${n[1]}</small></div>`).join("")}</div></section>`;
+      return `<section class="visual" aria-label="${t.visual}"><h3>${t.visual}</h3><div class="circle-grid">${names.map((n,i)=>`<div class="circle-card"><div class="life-circle ${i===0?'outside':''}"><span>${i===1?'†':'S'}</span><span class="cross">${i===1?'S':'†'}</span></div><strong>${n[0]}</strong><small>${n[1]}</small></div>`).join("")}</div></section>`;
     }
     if (page === 24) {
       const labels = lang === "ko"
