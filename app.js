@@ -314,7 +314,7 @@
     if (page === 11) {
       const names = lang === "ko"
         ? [["비그리스도인", "그리스도가 밖에 있음"], ["그리스도 중심", "그리스도가 삶을 다스림"], ["자아 중심", "자아가 삶을 다스림"]]
-        : [["Non-Christian", "Christ is outside"], ["Christ-directed", "Christ directs life"], ["Self-directed", "Self directs life"]];
+        : [["Non-Christian", "Christ is outside"], ["Spirit-led Christian", "Christ directs life"], ["Self-directed Christian", "Self directs life"]];
       return `<section class="visual" aria-label="${t.visual}"><h3>${t.visual}</h3><div class="circle-grid">${names.map((n,i)=>`<div class="circle-card"><div class="life-circle ${i===0?'outside':''}"><span>${i===1?'†':'S'}</span><span class="cross">${i===1?'S':'†'}</span></div><strong>${n[0]}</strong><small>${n[1]}</small></div>`).join("")}</div></section>`;
     }
     if (page === 24) {
@@ -413,7 +413,7 @@
     const self = lang === "ko" ? "나" : "S";
     const labels = lang === "ko"
       ? {natural:"자연인", spiritual:"성령의 사람", worldly:"세상적인 그리스도인"}
-      : {natural:"Natural person", spiritual:"Spirit-led person", worldly:"Worldly Christian"};
+      : {natural:"Non-Christian", spiritual:"Spirit-led Christian", worldly:"Self-directed Christian"};
     const dots = kind === "spiritual"
       ? [[90,34,5],[124,44,5],[145,72,5],[148,108,5],[126,137,5],[90,148,5],[54,137,5],[33,108,5],[36,72,5],[56,44,5]]
       : [[60,45,8],[91,34,5],[124,50,10],[141,82,6],[130,124,9],[92,142,5],[54,126,12],[38,90,5],[73,78,4],[112,96,5]];
