@@ -245,21 +245,6 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .progress-track span { transition: none; } }
 
-@media print {
-  .site-header, .progress-wrap, .lesson-nav, .tools, .lesson-pagination, .site-footer, .bible-reader { display: none !important; }
-  .app-shell { display: block; padding: 0; }
-  #lesson-content { max-width: none; }
-  .lesson-hero { break-after: page; }
-  .source-page { break-before: page; border: 0; padding-top: 0; }
-  .question, .visual, .person-profile, .principle-visual, .study-method-grid > li { break-inside: avoid; }
-  .principle-motion-video { display: none !important; }
-  .principle-motion-still { display: block !important; }
-  .motion-replay { display: none !important; }
-  .scripture-reference { margin: 0; padding: 0; color: inherit; background: transparent; text-decoration: none; }
-  .scripture-external { display: none; }
-  .question { border: 1px solid #888; }
-  .question input, .question textarea { border: 0 !important; border-bottom: 1px solid #888 !important; }
-}
 
 /* Korean and English are paired by source page. */
 .parallel-mode { --max: 1160px; }
@@ -282,8 +267,66 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
   .parallel-page { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .parallel-column + .parallel-column { border-left: 0; padding-left: 0; border-top: 1px dashed var(--line); padding-top: 28px; }
 }
+/* Print uses normal document flow; source-page numbers are not paper breaks. */
+.print-answer { display: none; }
+@page { margin: 14mm 12mm; }
 @media print {
-  .parallel-mode #lesson-content { grid-column: auto; grid-row: auto; }
-  .parallel-page { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
-  .parallel-column + .parallel-column { border-top: 0; border-left: 1px solid var(--line); padding-top: 0; padding-left: 20px; }
+  :root { --text-base: 10.5pt; --text-sm: 9pt; --text-xs: 8pt; --text-md: 13pt; --text-lg: 16pt; --text-display: 21pt; }
+  html, body { height: auto; min-height: 0; overflow: visible; }
+  body { margin: 0; font-size: 10.5pt; line-height: 1.5; color: #111; background: white; }
+  .site-header, .progress-wrap, .lesson-nav, .tools, .lesson-pagination, .site-footer, .bible-reader, .skip-link, .answer-status, .note-status, .motion-replay { display: none !important; }
+  .app-shell, .parallel-mode .app-shell { display: block; padding: 0; margin: 0; }
+  #lesson-content, .parallel-mode #lesson-content { display: block; max-width: none; min-width: 0; }
+  .lesson-hero { margin: 0 0 6mm; break-after: auto; }
+  .lesson-hero h2 { max-width: none; margin: 3mm 0; font-size: 21pt; line-height: 1.2; }
+  .week-chip { min-height: 0; padding: 1mm 3mm; }
+  .source-page { break-before: auto; break-after: auto; break-inside: auto; border: 0; padding: 3mm 0; margin: 0; }
+  /* Table cells can fragment across sheets without grid row height reservations. */
+  .parallel-page { display: table; table-layout: fixed; width: 100%; border-collapse: collapse; }
+  .parallel-column { display: table-cell; width: 50%; vertical-align: top; padding: 0 3mm 0 0; }
+  .parallel-column + .parallel-column { padding: 0 0 0 3mm; border-top: 0; border-left: 1px solid #ccc; }
+  .parallel-language { margin: 0 0 3mm; font-size: 9pt; }
+  p { orphans: 3; widows: 3; }
+  .content-text { margin-bottom: 3mm; max-width: none; }
+  .content-heading { margin: 5mm 0 2mm; break-after: avoid; }
+  .question { break-inside: auto; margin: 3mm 0; padding: 3mm; border: 1px solid #aaa; border-radius: 0; box-shadow: none; }
+  .question-label { margin-bottom: 2mm; font-size: 10.5pt; line-height: 1.4; break-after: avoid; }
+  .question input[type="text"], .question textarea, .leader-note textarea, [data-inline-key] { display: none !important; }
+  .print-answer { display: block; min-height: 7mm; padding: 1mm 0; border-bottom: 1px solid #aaa; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 10.5pt; line-height: 1.5; }
+  .response-medium .print-answer, .response-large .print-answer { min-height: 14mm; }
+  .print-answer.has-value { min-height: 0; }
+  .choice-row { gap: 2mm; break-inside: avoid; }
+  .choice-row label { min-width: 0; min-height: 0; padding: 1mm 3mm; border-radius: 0; }
+  .leader-note { margin-top: 2mm; padding-top: 2mm; }
+  .leader-note summary::before { display: none; }
+  .visual, .person-profile, .principle-visual, .study-method { margin: 4mm 0; padding: 3mm; border-radius: 0; background: white; box-shadow: none; overflow: visible; }
+  .visual, .person-profile, .principle-visual { break-inside: avoid; }
+  .circle-grid { min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2mm; }
+  .life-circle { width: 19mm; height: 19mm; margin-bottom: 2mm; font-size: 14pt; }
+  .life-circle .cross { top: 1mm; right: 3mm; font-size: 11pt; }
+  .life-circle.outside .cross { top: -3mm; right: -1mm; }
+  .circle-card strong, .circle-card small { font-size: 8pt; line-height: 1.3; }
+  .person-profile { display: block; }
+  .state-diagram { max-width: 32mm; }
+  .state-section-intro { margin-top: 4mm; }
+  .principle-copy { gap: 2mm; }
+  .principle-copy > span { flex-basis: 7mm; width: 7mm; height: 7mm; }
+  .principle-diagram { margin: 3mm auto 0; max-height: 55mm; width: 100%; }
+  .principle-motion-video { display: none !important; }
+  .principle-motion-still { display: block !important; }
+  .principle-motion-stage { border-radius: 0; box-shadow: none; }
+  .faith-train { min-width: 0; width: 100%; }
+  .prayer-table { min-width: 0; table-layout: fixed; }
+  .prayer-table th, .prayer-table td { padding: 2mm; overflow-wrap: anywhere; }
+  .study-method > header { padding: 2mm; gap: 2mm; background: white; break-after: avoid; }
+  .study-method > header > span { padding: 1mm; color: #111; }
+  .study-step-heading > strong { width: 6mm; height: 6mm; flex-basis: 6mm; }
+  .study-step-heading h4 { font-size: 11pt; }
+  .study-step-guide { margin: 1mm 0 2mm; }
+  .study-step-example { padding: 2mm; }
+  .study-method-grid { display: block; }
+  .study-method-grid > li { display: block; break-inside: avoid; padding: 2mm; border-right: 0; }
+  .study-step-heading, .study-step-guide { min-height: 0; }
+  .scripture-reference { display: inline; margin: 0; padding: 0; color: inherit; background: transparent; text-decoration: none; }
+  .scripture-external { display: none; }
 }

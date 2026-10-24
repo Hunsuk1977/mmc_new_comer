@@ -657,6 +657,21 @@
     const move = event.target.closest("[data-move]");
     if (move && !move.disabled) moveLesson(Number(move.dataset.move));
   });
+  // Print full saved answers as text, rather than clipped form-control viewports.
+  function preparePrintAnswers() {
+    clearPrintAnswers();
+    document.querySelectorAll('[data-answer], [data-leader-note], [data-inline-key]').forEach(control => {
+      const answer = document.createElement("div");
+      answer.className = `print-answer${control.value.trim() ? " has-value" : ""}`;
+      answer.textContent = control.value;
+      control.after(answer);
+    });
+  }
+  function clearPrintAnswers() {
+    document.querySelectorAll(".print-answer").forEach(answer => answer.remove());
+  }
+  addEventListener("beforeprint", preparePrintAnswers);
+  addEventListener("afterprint", clearPrintAnswers);
   el("print-button").addEventListener("click", () => print());
   el("bible-reader-close").addEventListener("click", () => el("bible-reader").close());
   el("bible-reader").addEventListener("click", event => {
